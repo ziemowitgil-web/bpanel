@@ -12,7 +12,7 @@ class BeneficiaryController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth'); // tylko logowanie wymagane
+        $this->middleware('auth'); // wymagana autoryzacja
     }
 
     // Lista beneficjentów
@@ -52,13 +52,16 @@ class BeneficiaryController extends Controller
             'slug'       => $slug,
         ]);
 
-        // Tworzenie użytkownika (login = email)
+        // Tworzenie użytkownika (login = unikalny)
+        $login = $this->generateLogin($request->first_name, $request->last_name);
         $plainPassword = Str::random(8);
+
         $user = User::create([
-            'name'     => $beneficiary->first_name . ' ' . $beneficiary->last_name,
-            'email'    => $beneficiary->email,
+            'name'     => $request->first_name . ' ' . $request->last_name,
+            'email'    => $login . '@example.com', // traktujemy login jako email
             'password' => bcrypt($plainPassword),
         ]);
+
         $beneficiary->user()->save($user);
 
         return redirect()->route('admin.beneficiaries.index')
@@ -88,7 +91,7 @@ class BeneficiaryController extends Controller
             'licenses.*.name' => 'required|string|max:255',
         ]);
 
-        // Generowanie nowego sluga tylko jeśli zmieniło się imię lub nazwisko
+        // Generowanie nowego sluga jeśli zmieniono imię lub nazwisko
         if ($beneficiary->first_name !== $request->first_name || $beneficiary->last_name !== $request->last_name) {
             $beneficiary->slug = $this->generateSlug($request->first_name, $request->last_name);
         }
@@ -114,13 +117,15 @@ class BeneficiaryController extends Controller
             }
         }
 
-        // Jeśli użytkownik istnieje, zaktualizuj hasło
+        // Jeśli użytkownik istnieje, aktualizujemy login i hasło
         $plainPassword = null;
         if ($beneficiary->user) {
+            $login = $this->generateLogin($request->first_name, $request->last_name);
             $plainPassword = Str::random(8);
+
             $beneficiary->user->update([
-                'name'     => $beneficiary->first_name . ' ' . $beneficiary->last_name,
-                'email'    => $beneficiary->email,
+                'name'     => $request->first_name . ' ' . $request->last_name,
+                'email'    => $login . '@example.com',
                 'password' => bcrypt($plainPassword),
             ]);
         }
@@ -147,7 +152,6 @@ class BeneficiaryController extends Controller
     {
         $slug = Str::lower(Str::ascii(substr($firstName, 0, 1) . $lastName));
 
-        // Jeśli istnieje konflikt, używamy pierwsze 3 litery imienia + nazwisko
         if (Beneficiary::where('slug', $slug)->exists()) {
             $slug = Str::lower(Str::ascii(substr($firstName, 0, 3) . $lastName));
             $originalSlug = $slug;
@@ -160,5 +164,24 @@ class BeneficiaryController extends Controller
         }
 
         return $slug;
+    }
+
+    // Generowanie unikalnego loginu
+    protected function generateLogin($firstName, $lastName)
+    {
+        $login = Str::lower(Str::ascii(substr($firstName, 0, 1) . $lastName));
+        $originalLogin = $login;
+        $counter = 1;
+
+        while (User::where('email', $login . '@example.com')->exists()) {
+            if ($counter === 1) {
+                $login = Str::lower(Str::ascii(substr($firstName, 0, 3) . $lastName));
+            } else {
+                $login = $originalLogin . $counter;
+            }
+            $counter++;
+        }
+
+        return $login;
     }
 }
