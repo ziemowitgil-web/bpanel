@@ -41,15 +41,7 @@
                     <input type="url" name="class_link" class="form-control" value="{{ old('class_link') }}">
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label">Instruktor</label>
-                    <select name="instructor_id" class="form-select">
-                        <option value="">-- brak --</option>
-                        @foreach($instructors as $inst)
-                            <option value="{{ $inst->id }}" @if(old('instructor_id') == $inst->id) selected @endif>
-                                {{ $inst->first_name }} {{ $inst->last_name }}
-                            </option>
-                        @endforeach
-                    </select>
+                    
                 </div>
             </div>
 
