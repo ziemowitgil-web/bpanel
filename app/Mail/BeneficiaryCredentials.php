@@ -29,4 +29,6 @@ class BeneficiaryCredentials extends Mailable
                 'password' => $this->password,
             ]);
     }
+
+
 }

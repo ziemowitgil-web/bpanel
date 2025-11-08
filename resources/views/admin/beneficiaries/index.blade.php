@@ -8,6 +8,7 @@
         @if(session('success'))
             <div class="alert alert-success">
                 {{ session('success') }}
+
                 @if(session('user_email') && session('user_password'))
                     <hr>
                     <div><strong>Email (login):</strong> {{ session('user_email') }}</div>
@@ -48,11 +49,20 @@
                         <td>{{ $b->slug }}</td>
                         <td>
                             <a href="{{ route('admin.beneficiaries.edit', $b) }}" class="btn btn-sm btn-warning mb-1">Edytuj</a>
+
                             <form action="{{ route('admin.beneficiaries.destroy', $b) }}" method="POST" style="display:inline-block;">
                                 @csrf
                                 @method('DELETE')
                                 <button class="btn btn-sm btn-danger" onclick="return confirm('Na pewno chcesz usunąć?')">Usuń</button>
                             </form>
+
+                            @if($b->user)
+                                <a href="{{ route('admin.beneficiaries.welcome-mail', $b) }}"
+                                   class="btn btn-sm btn-primary mb-1"
+                                   onclick="return confirm('Wyślij mail powitalny do {{ $b->first_name }}?')">
+                                    Wyślij mail powitalny
+                                </a>
+                            @endif
                         </td>
                     </tr>
                 @endforeach

@@ -58,4 +58,7 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
     // Usuwanie
     Route::delete('/beneficiaries/{beneficiary}', [BeneficiaryController::class, 'destroy'])
         ->name('admin.beneficiaries.destroy');
+
+    Route::get('/beneficiaries/{beneficiary}/welcome-mail', [App\Http\Controllers\Admin\BeneficiaryController::class, 'sendWelcomeMail'])
+        ->name('admin.beneficiaries.welcome-mail');
 });
