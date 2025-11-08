@@ -4,36 +4,34 @@
     <div class="container py-4">
 
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="h4 mb-0">Panel Beneficjentów</h1>
+            <h1 class="h4 mb-0">Panel beneficjentów</h1>
             <a href="{{ route('admin.beneficiaries.create') }}" class="btn btn-success">
-                <i class="bi bi-person-plus"></i> Dodaj beneficjenta
+                <i class="bi bi-person-plus"></i> Dodaj nowego
             </a>
         </div>
 
-        {{-- Wiadomości o sukcesie lub błędzie --}}
+        {{-- komunikaty --}}
         @if(session('success'))
             <div class="alert alert-success shadow-sm">
                 <strong>{{ session('success') }}</strong>
                 @if(session('user_email') && session('user_password'))
-                    <div class="mt-3 p-2 bg-light border rounded small">
-                        <div><strong>Login:</strong> {{ session('user_email') }}</div>
-                        <div><strong>Hasło:</strong> {{ session('user_password') }}</div>
+                    <div class="mt-2 p-2 bg-light border rounded small">
+                        <div><b>Login:</b> {{ session('user_email') }}</div>
+                        <div><b>Hasło:</b> {{ session('user_password') }}</div>
                     </div>
                 @endif
             </div>
         @endif
 
         @if(session('error'))
-            <div class="alert alert-danger shadow-sm">
-                {{ session('error') }}
-            </div>
+            <div class="alert alert-danger shadow-sm">{{ session('error') }}</div>
         @endif
 
-        {{-- Tabela beneficjentów --}}
+        {{-- tabela --}}
         <div class="card shadow-sm">
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-striped table-hover align-middle mb-0">
+                    <table class="table table-striped align-middle mb-0">
                         <thead class="table-dark">
                         <tr>
                             <th>ID</th>
@@ -43,7 +41,7 @@
                             <th>Aktywny</th>
                             <th>Link do zajęć</th>
                             <th>Slug</th>
-                            <th style="width: 260px;">Akcje</th>
+                            <th style="width: 280px;">Akcje</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -62,7 +60,7 @@
                                 </td>
                                 <td>
                                     @if($b->class_link)
-                                        <a href="{{ $b->class_link }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                        <a href="{{ $b->class_link }}" target="_blank" class="btn btn-sm btn-outline-primary">
                                             <i class="bi bi-link-45deg"></i> Zajęcia
                                         </a>
                                     @else
@@ -84,14 +82,13 @@
                                             </button>
                                         </form>
 
-                                        @if($b->user)
-                                            <form action="{{ route('admin.beneficiaries.sendWelcomeMail', $b->id) }}" method="POST">
-                                                @csrf
-                                                <button type="submit" class="btn btn-sm btn-primary">
-                                                    <i class="bi bi-envelope"></i> Mail powitalny
-                                                </button>
-                                            </form>
-                                        @endif
+                                        {{-- PRZYCISK MAILA POWITALNEGO --}}
+                                        <form action="{{ route('admin.beneficiaries.sendWelcomeMail', $b->id) }}" method="POST">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-primary">
+                                                <i class="bi bi-envelope"></i> Wyślij mail powitalny
+                                            </button>
+                                        </form>
                                     </div>
                                 </td>
                             </tr>
