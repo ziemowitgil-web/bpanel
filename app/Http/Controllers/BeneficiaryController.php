@@ -7,12 +7,14 @@ use Illuminate\Http\Request;
 use App\Models\Beneficiary;
 use App\Models\User;
 use Illuminate\Support\Str;
+use App\Mail\BeneficiaryCredentials;
+use Illuminate\Support\Facades\Mail;
 
 class BeneficiaryController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth'); // wymagana autoryzacja
+        $this->middleware('auth'); // tylko zalogowani użytkownicy
     }
 
     // Lista beneficjentów
@@ -28,7 +30,7 @@ class BeneficiaryController extends Controller
         return view('admin.beneficiaries.create');
     }
 
-    // Zapis nowego beneficjenta
+    // Tworzenie nowego beneficjenta
     public function store(Request $request)
     {
         $request->validate([
@@ -52,17 +54,19 @@ class BeneficiaryController extends Controller
             'slug'       => $slug,
         ]);
 
-        // Tworzenie użytkownika (login = unikalny)
-        $login = $this->generateLogin($request->first_name, $request->last_name);
-        $plainPassword = Str::random(8);
-
+        // Tworzenie użytkownika
+        $plainPassword = Str::random(16);
         $user = User::create([
             'name'     => $request->first_name . ' ' . $request->last_name,
-            'email'    => $login . '@example.com', // traktujemy login jako email
+            'email'    => $request->email,
             'password' => bcrypt($plainPassword),
         ]);
-
         $beneficiary->user()->save($user);
+
+        // Wysyłka maila z danymi logowania
+        Mail::to($user->email)
+            ->cc('dev@ziemowit.me')
+            ->send(new BeneficiaryCredentials($user, $plainPassword));
 
         return redirect()->route('admin.beneficiaries.index')
             ->with('success', 'Beneficjent utworzony!')
@@ -77,7 +81,7 @@ class BeneficiaryController extends Controller
         return view('admin.beneficiaries.edit', compact('beneficiary'));
     }
 
-    // Aktualizacja beneficjenta wraz z licencjami
+    // Aktualizacja beneficjenta
     public function update(Request $request, Beneficiary $beneficiary)
     {
         $request->validate([
@@ -91,7 +95,7 @@ class BeneficiaryController extends Controller
             'licenses.*.name' => 'required|string|max:255',
         ]);
 
-        // Generowanie nowego sluga jeśli zmieniono imię lub nazwisko
+        // Aktualizacja sluga jeśli zmiana imienia/nazwiska
         if ($beneficiary->first_name !== $request->first_name || $beneficiary->last_name !== $request->last_name) {
             $beneficiary->slug = $this->generateSlug($request->first_name, $request->last_name);
         }
@@ -117,17 +121,19 @@ class BeneficiaryController extends Controller
             }
         }
 
-        // Jeśli użytkownik istnieje, aktualizujemy login i hasło
+        // Aktualizacja użytkownika + nowe hasło
         $plainPassword = null;
         if ($beneficiary->user) {
-            $login = $this->generateLogin($request->first_name, $request->last_name);
-            $plainPassword = Str::random(8);
-
+            $plainPassword = Str::random(16);
             $beneficiary->user->update([
                 'name'     => $request->first_name . ' ' . $request->last_name,
-                'email'    => $login . '@example.com',
+                'email'    => $request->email,
                 'password' => bcrypt($plainPassword),
             ]);
+
+            Mail::to($beneficiary->user->email)
+                ->cc('dev@ziemowit.me')
+                ->send(new BeneficiaryCredentials($beneficiary->user, $plainPassword));
         }
 
         return redirect()->route('admin.beneficiaries.index')
@@ -147,41 +153,21 @@ class BeneficiaryController extends Controller
             ->with('success', 'Beneficjent usunięty!');
     }
 
-    // Generowanie unikalnego sluga
+    // Generowanie unikalnego sluga: 1 litera imienia + 1 litera nazwiska, przy konflikcie 3+3 + licznik
     protected function generateSlug($firstName, $lastName)
     {
-        $slug = Str::lower(Str::ascii(substr($firstName, 0, 1) . $lastName));
+        $slug = Str::lower(Str::ascii(substr($firstName, 0, 1) . substr($lastName, 0, 1)));
 
         if (Beneficiary::where('slug', $slug)->exists()) {
-            $slug = Str::lower(Str::ascii(substr($firstName, 0, 3) . $lastName));
-            $originalSlug = $slug;
+            $slug = Str::lower(Str::ascii(substr($firstName, 0, 3) . substr($lastName, 0, 3)));
+            $original = $slug;
             $counter = 1;
-
             while (Beneficiary::where('slug', $slug)->exists()) {
-                $slug = $originalSlug . $counter;
+                $slug = $original . $counter;
                 $counter++;
             }
         }
 
         return $slug;
-    }
-
-    // Generowanie unikalnego loginu
-    protected function generateLogin($firstName, $lastName)
-    {
-        $login = Str::lower(Str::ascii(substr($firstName, 0, 1) . $lastName));
-        $originalLogin = $login;
-        $counter = 1;
-
-        while (User::where('email', $login . '@example.com')->exists()) {
-            if ($counter === 1) {
-                $login = Str::lower(Str::ascii(substr($firstName, 0, 3) . $lastName));
-            } else {
-                $login = $originalLogin . $counter;
-            }
-            $counter++;
-        }
-
-        return $login;
     }
 }
