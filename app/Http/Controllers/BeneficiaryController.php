@@ -11,18 +11,21 @@ use Illuminate\Support\Str;
 
 class BeneficiaryController extends Controller
 {
+    // Lista beneficjentów
     public function index()
     {
         $beneficiaries = Beneficiary::with('user', 'licenses')->get();
         return view('admin.beneficiaries.index', compact('beneficiaries'));
     }
 
+    // Formularz tworzenia
     public function create()
     {
         $instructors = Instructor::all() ?? collect();
         return view('admin.beneficiaries.create', compact('instructors'));
     }
 
+    // Zapis nowego beneficjenta
     public function store(Request $request)
     {
         $request->validate([
@@ -48,7 +51,7 @@ class BeneficiaryController extends Controller
             'instructor_id' => $request->instructor_id,
         ]);
 
-        // Tworzenie użytkownika dla beneficjenta
+        // Tworzenie użytkownika
         $loginBase = strtolower(substr($request->first_name, 0, 3) . substr($request->last_name, 0, 3));
         $login = $loginBase . $beneficiary->id;
         $counter = 1;
@@ -69,20 +72,21 @@ class BeneficiaryController extends Controller
 
         $beneficiary->user()->save($user);
 
-        // Przekazanie loginu i hasła do widoku
         return redirect()->route('admin.beneficiaries.index')
             ->with('success', 'Beneficjent utworzony!')
             ->with('user_login', $login)
             ->with('user_password', $plainPassword);
     }
 
+    // Formularz edycji
     public function edit(Beneficiary $beneficiary)
     {
         $instructors = Instructor::all() ?? collect();
-        $beneficiary->load('licenses');
+        $beneficiary->load('licenses', 'user');
         return view('admin.beneficiaries.edit', compact('beneficiary', 'instructors'));
     }
 
+    // Aktualizacja beneficjenta
     public function update(Request $request, Beneficiary $beneficiary)
     {
         $request->validate([
@@ -97,6 +101,7 @@ class BeneficiaryController extends Controller
             'licenses.*.name'=> 'required|string',
         ]);
 
+        // Generowanie nowego sluga tylko jeśli zmieniło się imię lub nazwisko
         if ($beneficiary->first_name !== $request->first_name || $beneficiary->last_name !== $request->last_name) {
             $beneficiary->slug = $this->generateSlug($request->first_name, $request->last_name);
         }
@@ -111,6 +116,7 @@ class BeneficiaryController extends Controller
             'instructor_id' => $request->instructor_id,
         ]);
 
+        // Obsługa licencji
         if ($request->has('licenses')) {
             foreach ($request->licenses as $id => $data) {
                 if (is_numeric($id)) {
@@ -126,16 +132,23 @@ class BeneficiaryController extends Controller
             ->with('success', 'Beneficjent zaktualizowany wraz z licencjami!');
     }
 
+    // Usuwanie beneficjenta
     public function destroy(Beneficiary $beneficiary)
     {
+        // Usuń użytkownika powiązanego
         if ($beneficiary->user) $beneficiary->user->delete();
+
+        // Usuń licencje
         $beneficiary->licenses()->delete();
+
+        // Usuń beneficjenta
         $beneficiary->delete();
 
         return redirect()->route('admin.beneficiaries.index')
             ->with('success', 'Beneficjent usunięty!');
     }
 
+    // Generowanie unikalnego sluga
     protected function generateSlug($firstName, $lastName)
     {
         $slug = Str::lower(Str::ascii($firstName[0] . $lastName[0]));
