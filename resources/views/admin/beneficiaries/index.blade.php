@@ -83,7 +83,7 @@
                                         </form>
 
                                         {{-- PRZYCISK MAILA POWITALNEGO --}}
-                                        <form action="{{ route('admin.beneficiaries.sendWelcomeMail', $b->id) }}" method="POST">
+                                        <form action="{{ route('admin.beneficiaries.welcome-mail', $b->id) }}" method="POST">
                                             @csrf
                                             <button type="submit" class="btn btn-sm btn-primary">
                                                 <i class="bi bi-envelope"></i> Wyślij mail powitalny
