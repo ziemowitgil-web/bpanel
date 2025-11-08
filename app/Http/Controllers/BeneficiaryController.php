@@ -13,9 +13,9 @@ class BeneficiaryController extends Controller
 {
     public function __construct()
     {
-        // Możesz tu dodać middleware dla admina
+        // Middleware auth/admin
         $this->middleware('auth');
-        $this->middleware('admin'); // przykładowo, jeśli masz flagę is_admin
+        $this->middleware('admin'); // jeśli masz flagę is_admin
     }
 
     // Lista beneficjentów
@@ -42,7 +42,7 @@ class BeneficiaryController extends Controller
             'phone'         => 'nullable|string|max:20',
             'class_link'    => 'nullable|url|max:255',
             'instructor_id' => 'nullable|exists:instructors,id',
-            'active'        => 'nullable|boolean',
+            'active'        => 'sometimes|boolean', // poprawiona walidacja checkbox
         ]);
 
         $slug = $this->generateSlug($request->first_name, $request->last_name);
@@ -91,7 +91,7 @@ class BeneficiaryController extends Controller
             'phone'          => 'nullable|string|max:20',
             'class_link'     => 'nullable|url|max:255',
             'instructor_id'  => 'nullable|exists:instructors,id',
-            'active'         => 'nullable|boolean',
+            'active'         => 'sometimes|boolean',
             'licenses.*.type'=> 'required|string|max:255',
             'licenses.*.name'=> 'required|string|max:255',
         ]);
@@ -129,15 +129,12 @@ class BeneficiaryController extends Controller
     // Usuwanie beneficjenta
     public function destroy(Beneficiary $beneficiary)
     {
-        // Usuń licencje
         $beneficiary->licenses()->delete();
 
-        // Usuń użytkownika powiązanego
         if ($beneficiary->user) {
             $beneficiary->user->delete();
         }
 
-        // Usuń beneficjenta
         $beneficiary->delete();
 
         return redirect()->route('admin.beneficiaries.index')
@@ -147,11 +144,9 @@ class BeneficiaryController extends Controller
     // Generowanie unikalnego sluga
     protected function generateSlug($firstName, $lastName)
     {
-        // Domyślny slug: pierwsza litera imienia + pierwsza litera nazwiska
         $slug = Str::lower(Str::ascii(substr($firstName, 0, 1) . substr($lastName, 0, 1)));
 
         if (Beneficiary::where('slug', $slug)->exists()) {
-            // Konflikt: używamy 3 liter imienia + 3 liter nazwiska
             $slug = Str::lower(Str::ascii(substr($firstName, 0, 3) . substr($lastName, 0, 3)));
             $originalSlug = $slug;
             $counter = 1;

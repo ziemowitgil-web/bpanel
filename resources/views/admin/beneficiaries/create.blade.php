@@ -16,6 +16,7 @@
 
         <form action="{{ route('admin.beneficiaries.store') }}" method="POST">
             @csrf
+
             <div class="row mb-3">
                 <div class="col-md-4">
                     <label class="form-label">Imię</label>
@@ -32,16 +33,13 @@
             </div>
 
             <div class="row mb-3">
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <label class="form-label">Telefon</label>
                     <input type="text" name="phone" class="form-control" value="{{ old('phone') }}">
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <label class="form-label">Link do zajęć</label>
                     <input type="url" name="class_link" class="form-control" value="{{ old('class_link') }}">
-                </div>
-                <div class="col-md-4">
-                    
                 </div>
             </div>
 

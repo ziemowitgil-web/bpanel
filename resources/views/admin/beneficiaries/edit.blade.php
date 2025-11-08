@@ -34,24 +34,13 @@
             </div>
 
             <div class="row mb-3">
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <label class="form-label">Telefon</label>
                     <input type="text" name="phone" class="form-control" value="{{ old('phone', $beneficiary->phone) }}">
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <label class="form-label">Link do zajęć</label>
                     <input type="url" name="class_link" class="form-control" value="{{ old('class_link', $beneficiary->class_link) }}">
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">Instruktor</label>
-                    <select name="instructor_id" class="form-select">
-                        <option value="">-- brak --</option>
-                        @foreach($instructors as $inst)
-                            <option value="{{ $inst->id }}" @if(old('instructor_id', $beneficiary->instructor_id) == $inst->id) selected @endif>
-                                {{ $inst->first_name }} {{ $inst->last_name }}
-                            </option>
-                        @endforeach
-                    </select>
                 </div>
             </div>
 
@@ -72,3 +61,39 @@
                             <input type="text" name="licenses[{{ $index }}][name]" class="form-control" value="{{ $license['name'] }}">
                         </div>
                         <div class="col-md-2">
+                            <button type="button" class="btn btn-danger btn-sm remove-license">Usuń</button>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+            <button type="button" id="add-license" class="btn btn-sm btn-success mb-3">Dodaj licencję</button>
+
+            <div>
+                <button type="submit" class="btn btn-primary">Zapisz zmiany</button>
+                <a href="{{ route('admin.beneficiaries.index') }}" class="btn btn-secondary">Powrót</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        let licenseIndex = {{ count(old('licenses', $beneficiary->licenses)) }};
+        document.getElementById('add-license').addEventListener('click', function() {
+            const container = document.getElementById('licenses-container');
+            const div = document.createElement('div');
+            div.classList.add('row', 'mb-2');
+            div.innerHTML = `
+        <div class="col-md-4"><input type="text" name="licenses[${licenseIndex}][type]" class="form-control" placeholder="Typ licencji"></div>
+        <div class="col-md-6"><input type="text" name="licenses[${licenseIndex}][name]" class="form-control" placeholder="Nazwa licencji"></div>
+        <div class="col-md-2"><button type="button" class="btn btn-danger btn-sm remove-license">Usuń</button></div>
+    `;
+            container.appendChild(div);
+            licenseIndex++;
+        });
+
+        document.getElementById('licenses-container').addEventListener('click', function(e) {
+            if(e.target.classList.contains('remove-license')) {
+                e.target.closest('.row').remove();
+            }
+        });
+    </script>
+@endsection
