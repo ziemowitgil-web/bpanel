@@ -1,99 +1,152 @@
-@extends('layouts.app')
+<?php
 
-@section('content')
-    <div class="container mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h1>Beneficjenci</h1>
-            <a href="{{ route('admin.beneficiaries.create') }}" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> Dodaj nowego
-            </a>
-        </div>
+namespace App\Http\Controllers\Admin;
 
-        {{-- Alert z sukcesem i danymi logowania --}}
-        @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                {{ session('success') }}
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use App\Models\Beneficiary;
+use App\Models\User;
+use App\Models\Instructor;
+use Illuminate\Support\Str;
 
-                @if(session('user_login') && session('user_password'))
-                    <hr>
-                    <div class="mb-2">
-                        <strong>Login:</strong> <span id="newUserLogin">{{ session('user_login') }}</span>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="copyToClipboard('newUserLogin')">Kopiuj</button>
-                    </div>
-                    <div>
-                        <strong>Hasło:</strong> <span id="newUserPassword">{{ session('user_password') }}</span>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="copyToClipboard('newUserPassword')">Kopiuj</button>
-                    </div>
-                @endif
+class BeneficiaryController extends Controller
+{
+    public function index()
+    {
+        $beneficiaries = Beneficiary::with('user', 'licenses')->get();
+        return view('admin.beneficiaries.index', compact('beneficiaries'));
+    }
 
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
+    public function create()
+    {
+        $instructors = Instructor::all() ?? collect();
+        return view('admin.beneficiaries.create', compact('instructors'));
+    }
 
-        <div class="table-responsive">
-            <table class="table table-bordered table-striped table-hover align-middle">
-                <thead class="table-dark">
-                <tr>
-                    <th>ID</th>
-                    <th>Imię</th>
-                    <th>Nazwisko</th>
-                    <th>Email</th>
-                    <th>Aktywny</th>
-                    <th>Link do zajęć</th>
-                    <th>Login</th>
-                    <th>Slug</th>
-                    <th>Akcje</th>
-                </tr>
-                </thead>
-                <tbody>
-                @foreach($beneficiaries as $b)
-                    <tr>
-                        <td>{{ $b->id }}</td>
-                        <td>{{ $b->first_name }}</td>
-                        <td>{{ $b->last_name }}</td>
-                        <td>{{ $b->email }}</td>
-                        <td>
-                            @if($b->active)
-                                <span class="badge bg-success">Tak</span>
-                            @else
-                                <span class="badge bg-secondary">Nie</span>
-                            @endif
-                        </td>
-                        <td>
-                            @if($b->class_link)
-                                <a href="{{ $b->class_link }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                                    <i class="bi bi-link-45deg"></i> Link
-                                </a>
-                            @endif
-                        </td>
-                        <td>{{ $b->user ? $b->user->name : '-' }}</td>
-                        <td>{{ $b->slug }}</td>
-                        <td>
-                            <a href="{{ route('admin.beneficiaries.edit', $b) }}" class="btn btn-sm btn-warning mb-1">
-                                <i class="bi bi-pencil-square"></i> Edytuj
-                            </a>
-                            <form action="{{ route('admin.beneficiaries.destroy', $b) }}" method="POST" class="d-inline-block">
-                                @csrf
-                                @method('DELETE')
-                                <button class="btn btn-sm btn-danger" onclick="return confirm('Na pewno chcesz usunąć?')">
-                                    <i class="bi bi-trash"></i> Usuń
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                @endforeach
-                </tbody>
-            </table>
-        </div>
-    </div>
+    public function store(Request $request)
+    {
+        $request->validate([
+            'first_name'    => 'required|string',
+            'last_name'     => 'required|string',
+            'email'         => 'required|email|unique:beneficiaries,email',
+            'phone'         => 'nullable|string',
+            'class_link'    => 'nullable|url',
+            'instructor_id' => 'nullable|exists:instructors,id',
+            'active'        => 'nullable|boolean',
+        ]);
 
-    {{-- Skrypt kopiowania do schowka --}}
-    <script>
-        function copyToClipboard(elementId) {
-            const text = document.getElementById(elementId).innerText;
-            navigator.clipboard.writeText(text).then(() => {
-                alert('Skopiowano: ' + text);
-            });
+        $slug = $this->generateSlug($request->first_name, $request->last_name);
+
+        $beneficiary = Beneficiary::create([
+            'first_name'    => $request->first_name,
+            'last_name'     => $request->last_name,
+            'email'         => $request->email,
+            'phone'         => $request->phone,
+            'class_link'    => $request->class_link,
+            'active'        => $request->has('active'),
+            'slug'          => $slug,
+            'instructor_id' => $request->instructor_id,
+        ]);
+
+        // Tworzenie użytkownika dla beneficjenta
+        $loginBase = strtolower(substr($request->first_name, 0, 3) . substr($request->last_name, 0, 3));
+        $login = $loginBase . $beneficiary->id;
+        $counter = 1;
+        $originalLogin = $login;
+
+        while (User::where('name', $login)->exists()) {
+            $login = $originalLogin . $counter;
+            $counter++;
         }
-    </script>
-@endsection
+
+        $plainPassword = Str::random(8);
+
+        $user = User::create([
+            'name'     => $login,
+            'email'    => $beneficiary->email,
+            'password' => bcrypt($plainPassword),
+        ]);
+
+        $beneficiary->user()->save($user);
+
+        // Przekazanie loginu i hasła do widoku
+        return redirect()->route('admin.beneficiaries.index')
+            ->with('success', 'Beneficjent utworzony!')
+            ->with('user_login', $login)
+            ->with('user_password', $plainPassword);
+    }
+
+    public function edit(Beneficiary $beneficiary)
+    {
+        $instructors = Instructor::all() ?? collect();
+        $beneficiary->load('licenses');
+        return view('admin.beneficiaries.edit', compact('beneficiary', 'instructors'));
+    }
+
+    public function update(Request $request, Beneficiary $beneficiary)
+    {
+        $request->validate([
+            'first_name'     => 'required|string',
+            'last_name'      => 'required|string',
+            'email'          => 'required|email|unique:beneficiaries,email,' . $beneficiary->id,
+            'phone'          => 'nullable|string',
+            'class_link'     => 'nullable|url',
+            'instructor_id'  => 'nullable|exists:instructors,id',
+            'active'         => 'nullable|boolean',
+            'licenses.*.type'=> 'required|string',
+            'licenses.*.name'=> 'required|string',
+        ]);
+
+        if ($beneficiary->first_name !== $request->first_name || $beneficiary->last_name !== $request->last_name) {
+            $beneficiary->slug = $this->generateSlug($request->first_name, $request->last_name);
+        }
+
+        $beneficiary->update([
+            'first_name'    => $request->first_name,
+            'last_name'     => $request->last_name,
+            'email'         => $request->email,
+            'phone'         => $request->phone,
+            'class_link'    => $request->class_link,
+            'active'        => $request->has('active'),
+            'instructor_id' => $request->instructor_id,
+        ]);
+
+        if ($request->has('licenses')) {
+            foreach ($request->licenses as $id => $data) {
+                if (is_numeric($id)) {
+                    $license = $beneficiary->licenses()->find($id);
+                    if ($license) $license->update($data);
+                } else {
+                    $beneficiary->licenses()->create($data);
+                }
+            }
+        }
+
+        return redirect()->route('admin.beneficiaries.index')
+            ->with('success', 'Beneficjent zaktualizowany wraz z licencjami!');
+    }
+
+    public function destroy(Beneficiary $beneficiary)
+    {
+        if ($beneficiary->user) $beneficiary->user->delete();
+        $beneficiary->licenses()->delete();
+        $beneficiary->delete();
+
+        return redirect()->route('admin.beneficiaries.index')
+            ->with('success', 'Beneficjent usunięty!');
+    }
+
+    protected function generateSlug($firstName, $lastName)
+    {
+        $slug = Str::lower(Str::ascii($firstName[0] . $lastName[0]));
+        $originalSlug = $slug;
+        $counter = 1;
+
+        while (Beneficiary::where('slug', $slug)->exists()) {
+            $slug = $originalSlug . $counter;
+            $counter++;
+        }
+
+        return $slug;
+    }
+}

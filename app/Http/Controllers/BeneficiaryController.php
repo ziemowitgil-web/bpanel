@@ -11,21 +11,18 @@ use Illuminate\Support\Str;
 
 class BeneficiaryController extends Controller
 {
-    // Lista beneficjentów
     public function index()
     {
         $beneficiaries = Beneficiary::with('user', 'licenses')->get();
         return view('admin.beneficiaries.index', compact('beneficiaries'));
     }
 
-    // Formularz tworzenia
     public function create()
     {
         $instructors = Instructor::all() ?? collect();
         return view('admin.beneficiaries.create', compact('instructors'));
     }
 
-    // Zapis nowego beneficjenta
     public function store(Request $request)
     {
         $request->validate([
@@ -72,22 +69,20 @@ class BeneficiaryController extends Controller
 
         $beneficiary->user()->save($user);
 
-        // Przekazanie loginu i hasła do widoku przez sesję
+        // Przekazanie loginu i hasła do widoku
         return redirect()->route('admin.beneficiaries.index')
             ->with('success', 'Beneficjent utworzony!')
             ->with('user_login', $login)
             ->with('user_password', $plainPassword);
     }
 
-    // Formularz edycji
     public function edit(Beneficiary $beneficiary)
     {
         $instructors = Instructor::all() ?? collect();
-        $beneficiary->load('licenses'); // Załaduj licencje
+        $beneficiary->load('licenses');
         return view('admin.beneficiaries.edit', compact('beneficiary', 'instructors'));
     }
 
-    // Aktualizacja beneficjenta wraz z licencjami
     public function update(Request $request, Beneficiary $beneficiary)
     {
         $request->validate([
@@ -102,7 +97,6 @@ class BeneficiaryController extends Controller
             'licenses.*.name'=> 'required|string',
         ]);
 
-        // Generowanie nowego sluga tylko jeśli zmieniło się imię lub nazwisko
         if ($beneficiary->first_name !== $request->first_name || $beneficiary->last_name !== $request->last_name) {
             $beneficiary->slug = $this->generateSlug($request->first_name, $request->last_name);
         }
@@ -117,17 +111,12 @@ class BeneficiaryController extends Controller
             'instructor_id' => $request->instructor_id,
         ]);
 
-        // Obsługa licencji
         if ($request->has('licenses')) {
             foreach ($request->licenses as $id => $data) {
                 if (is_numeric($id)) {
-                    // istniejąca licencja – update
                     $license = $beneficiary->licenses()->find($id);
-                    if ($license) {
-                        $license->update($data);
-                    }
+                    if ($license) $license->update($data);
                 } else {
-                    // nowa licencja – create
                     $beneficiary->licenses()->create($data);
                 }
             }
@@ -137,26 +126,19 @@ class BeneficiaryController extends Controller
             ->with('success', 'Beneficjent zaktualizowany wraz z licencjami!');
     }
 
-    // Usuwanie
     public function destroy(Beneficiary $beneficiary)
     {
-        if ($beneficiary->user) {
-            $beneficiary->user->delete();
-        }
-
-        // Usuń wszystkie licencje powiązane
+        if ($beneficiary->user) $beneficiary->user->delete();
         $beneficiary->licenses()->delete();
-
         $beneficiary->delete();
 
         return redirect()->route('admin.beneficiaries.index')
             ->with('success', 'Beneficjent usunięty!');
     }
 
-    // Generowanie unikalnego sluga
     protected function generateSlug($firstName, $lastName)
     {
-        $slug = Str::lower(Str::ascii($firstName[0] . $lastName[0])); // pierwsze litery imienia i nazwiska
+        $slug = Str::lower(Str::ascii($firstName[0] . $lastName[0]));
         $originalSlug = $slug;
         $counter = 1;
 
