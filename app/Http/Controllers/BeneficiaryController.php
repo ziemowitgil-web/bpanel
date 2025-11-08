@@ -6,16 +6,13 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Beneficiary;
 use App\Models\User;
-use App\Models\Instructor;
 use Illuminate\Support\Str;
 
 class BeneficiaryController extends Controller
 {
     public function __construct()
     {
-        // Middleware auth/admin
         $this->middleware('auth');
-        $this->middleware('admin'); // jeśli masz flagę is_admin
     }
 
     // Lista beneficjentów
@@ -28,8 +25,7 @@ class BeneficiaryController extends Controller
     // Formularz tworzenia
     public function create()
     {
-        $instructors = Instructor::all() ?? collect();
-        return view('admin.beneficiaries.create', compact('instructors'));
+        return view('admin.beneficiaries.create');
     }
 
     // Zapis nowego beneficjenta
@@ -41,8 +37,7 @@ class BeneficiaryController extends Controller
             'email'         => 'required|email|unique:beneficiaries,email',
             'phone'         => 'nullable|string|max:20',
             'class_link'    => 'nullable|url|max:255',
-            'instructor_id' => 'nullable|exists:instructors,id',
-            'active'        => 'sometimes|boolean', // poprawiona walidacja checkbox
+            'active'        => 'sometimes|boolean',
         ]);
 
         $slug = $this->generateSlug($request->first_name, $request->last_name);
@@ -55,10 +50,9 @@ class BeneficiaryController extends Controller
             'class_link'    => $request->class_link,
             'active'        => $request->has('active'),
             'slug'          => $slug,
-            'instructor_id' => $request->instructor_id,
         ]);
 
-        // Tworzenie użytkownika
+        // Tworzenie użytkownika (login = email)
         $plainPassword = Str::random(8);
         $user = User::create([
             'name'     => $beneficiary->first_name . ' ' . $beneficiary->last_name,
@@ -76,9 +70,8 @@ class BeneficiaryController extends Controller
     // Formularz edycji
     public function edit(Beneficiary $beneficiary)
     {
-        $instructors = Instructor::all() ?? collect();
         $beneficiary->load('licenses', 'user');
-        return view('admin.beneficiaries.edit', compact('beneficiary', 'instructors'));
+        return view('admin.beneficiaries.edit', compact('beneficiary'));
     }
 
     // Aktualizacja beneficjenta wraz z licencjami
@@ -90,7 +83,6 @@ class BeneficiaryController extends Controller
             'email'          => 'required|email|unique:beneficiaries,email,' . $beneficiary->id,
             'phone'          => 'nullable|string|max:20',
             'class_link'     => 'nullable|url|max:255',
-            'instructor_id'  => 'nullable|exists:instructors,id',
             'active'         => 'sometimes|boolean',
             'licenses.*.type'=> 'required|string|max:255',
             'licenses.*.name'=> 'required|string|max:255',
@@ -107,7 +99,6 @@ class BeneficiaryController extends Controller
             'phone'         => $request->phone,
             'class_link'    => $request->class_link,
             'active'        => $request->has('active'),
-            'instructor_id' => $request->instructor_id,
         ]);
 
         // Aktualizacja licencji
@@ -130,11 +121,7 @@ class BeneficiaryController extends Controller
     public function destroy(Beneficiary $beneficiary)
     {
         $beneficiary->licenses()->delete();
-
-        if ($beneficiary->user) {
-            $beneficiary->user->delete();
-        }
-
+        if ($beneficiary->user) $beneficiary->user->delete();
         $beneficiary->delete();
 
         return redirect()->route('admin.beneficiaries.index')
