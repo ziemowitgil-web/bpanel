@@ -1,73 +1,110 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="container mt-4">
-        <h1>Beneficjenci</h1>
-        <a href="{{ route('admin.beneficiaries.create') }}" class="btn btn-primary mb-3">Dodaj nowego</a>
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0">Zarządzanie beneficjentami</h1>
+            <a href="{{ route('admin.beneficiaries.create') }}" class="btn btn-success">
+                <i class="bi bi-person-plus"></i> Dodaj nowego
+            </a>
+        </div>
 
+        {{-- Komunikaty o powodzeniu / błędach --}}
         @if(session('success'))
-            <div class="alert alert-success">
-                {{ session('success') }}
-
+            <div class="alert alert-success shadow-sm">
+                <strong>{{ session('success') }}</strong>
                 @if(session('user_email') && session('user_password'))
-                    <hr>
-                    <div><strong>Email (login):</strong> {{ session('user_email') }}</div>
-                    <div><strong>Hasło:</strong> {{ session('user_password') }}</div>
+                    <div class="mt-2 p-2 bg-light border rounded small">
+                        <div><strong>Login (email):</strong> {{ session('user_email') }}</div>
+                        <div><strong>Hasło:</strong> {{ session('user_password') }}</div>
+                    </div>
                 @endif
             </div>
         @endif
 
-        <div class="table-responsive">
-            <table class="table table-bordered table-striped">
-                <thead class="table-dark">
-                <tr>
-                    <th>ID</th>
-                    <th>Imię</th>
-                    <th>Nazwisko</th>
-                    <th>Email</th>
-                    <th>Aktywny</th>
-                    <th>Link do zajęć</th>
-                    <th>Login</th>
-                    <th>Slug</th>
-                    <th>Akcje</th>
-                </tr>
-                </thead>
-                <tbody>
-                @foreach($beneficiaries as $b)
-                    <tr>
-                        <td>{{ $b->id }}</td>
-                        <td>{{ $b->first_name }}</td>
-                        <td>{{ $b->last_name }}</td>
-                        <td>{{ $b->email }}</td>
-                        <td>{{ $b->active ? 'Tak' : 'Nie' }}</td>
-                        <td>
-                            @if($b->class_link)
-                                <a href="{{ $b->class_link }}" target="_blank">Link</a>
-                            @endif
-                        </td>
-                        <td>{{ $b->user ? $b->user->email : '-' }}</td>
-                        <td>{{ $b->slug }}</td>
-                        <td>
-                            <a href="{{ route('admin.beneficiaries.edit', $b) }}" class="btn btn-sm btn-warning mb-1">Edytuj</a>
+        @if(session('error'))
+            <div class="alert alert-danger shadow-sm">
+                {{ session('error') }}
+            </div>
+        @endif
 
-                            <form action="{{ route('admin.beneficiaries.destroy', $b) }}" method="POST" style="display:inline-block;">
-                                @csrf
-                                @method('DELETE')
-                                <button class="btn btn-sm btn-danger" onclick="return confirm('Na pewno chcesz usunąć?')">Usuń</button>
-                            </form>
+        {{-- Tabela beneficjentów --}}
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-dark">
+                        <tr>
+                            <th>#</th>
+                            <th>Imię i nazwisko</th>
+                            <th>Email</th>
+                            <th>Telefon</th>
+                            <th>Aktywny</th>
+                            <th>Link do zajęć</th>
+                            <th>Slug</th>
+                            <th style="width: 230px;">Akcje</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @forelse($beneficiaries as $b)
+                            <tr>
+                                <td>{{ $b->id }}</td>
+                                <td><strong>{{ $b->first_name }} {{ $b->last_name }}</strong></td>
+                                <td>{{ $b->email }}</td>
+                                <td>{{ $b->phone ?? '-' }}</td>
+                                <td>
+                                    @if($b->active)
+                                        <span class="badge bg-success">Tak</span>
+                                    @else
+                                        <span class="badge bg-secondary">Nie</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($b->class_link)
+                                        <a href="{{ $b->class_link }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-link-45deg"></i> Zajęcia
+                                        </a>
+                                    @else
+                                        <span class="text-muted small">brak</span>
+                                    @endif
+                                </td>
+                                <td><code>{{ $b->slug }}</code></td>
+                                <td>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        <a href="{{ route('admin.beneficiaries.edit', $b) }}" class="btn btn-sm btn-warning">
+                                            <i class="bi bi-pencil"></i> Edytuj
+                                        </a>
 
-                            @if($b->user)
-                                <a href="{{ route('admin.beneficiaries.welcome-mail', $b) }}"
-                                   class="btn btn-sm btn-primary mb-1"
-                                   onclick="return confirm('Wyślij mail powitalny do {{ $b->first_name }}?')">
-                                    Wyślij mail powitalny
-                                </a>
-                            @endif
-                        </td>
-                    </tr>
-                @endforeach
-                </tbody>
-            </table>
+                                        <form action="{{ route('admin.beneficiaries.destroy', $b) }}" method="POST" onsubmit="return confirm('Na pewno chcesz usunąć tego beneficjenta?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button class="btn btn-sm btn-danger">
+                                                <i class="bi bi-trash"></i> Usuń
+                                            </button>
+                                        </form>
+
+                                        @if($b->user)
+                                            <form action="{{ route('admin.beneficiaries.send-welcome-mail', $b) }}" method="POST" onsubmit="return confirm('Wysłać mail powitalny do {{ $b->first_name }}?');">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-primary">
+                                                    <i class="bi bi-envelope"></i> Mail powitalny
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="8" class="text-center py-4 text-muted">
+                                    Brak beneficjentów w bazie.
+                                </td>
+                            </tr>
+                        @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 @endsection
