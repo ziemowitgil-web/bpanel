@@ -147,3 +147,5 @@ class BeneficiaryController extends Controller
         }
 
         return $slug;
+    }
+}
