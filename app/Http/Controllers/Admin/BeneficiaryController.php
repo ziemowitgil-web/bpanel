@@ -107,4 +107,21 @@ class BeneficiaryController extends Controller
         return redirect()->route('admin.beneficiaries.index')
             ->with('info', 'Beneficjent już ma konto. Możesz wysłać mail ponownie z edycji użytkownika.');
     }
+
+    /**
+     * Usuń konto użytkownika powiązanego z beneficjentem, bez usuwania beneficjenta.
+     */
+    public function deleteUser(Beneficiary $beneficiary)
+    {
+        if ($beneficiary->user) {
+            $email = $beneficiary->user->email;
+            $beneficiary->user->delete();
+
+            return redirect()->route('admin.beneficiaries.index')
+                ->with('success', "Konto użytkownika ({$email}) zostało usunięte.");
+        }
+
+        return redirect()->route('admin.beneficiaries.index')
+            ->with('error', 'Ten beneficjent nie ma konta użytkownika.');
+    }
 }

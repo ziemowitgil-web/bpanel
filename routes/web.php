@@ -61,4 +61,7 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
 
     Route::post('/beneficiaries/{beneficiary}/welcome-mail', [App\Http\Controllers\Admin\BeneficiaryController::class, 'sendWelcomeMail'])
         ->name('admin.beneficiaries.welcome-mail');
+
+    Route::post('/beneficiaries/{beneficiary}/delete-user', [BeneficiaryController::class, 'deleteUser'])
+        ->name('admin.beneficiaries.delete-user');
 });
