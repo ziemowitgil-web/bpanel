@@ -114,8 +114,21 @@ class BeneficiaryController extends Controller
             }
         }
 
+        // Jeśli użytkownik istnieje, zaktualizuj hasło
+        $plainPassword = null;
+        if ($beneficiary->user) {
+            $plainPassword = Str::random(8);
+            $beneficiary->user->update([
+                'name'     => $beneficiary->first_name . ' ' . $beneficiary->last_name,
+                'email'    => $beneficiary->email,
+                'password' => bcrypt($plainPassword),
+            ]);
+        }
+
         return redirect()->route('admin.beneficiaries.index')
-            ->with('success', 'Beneficjent zaktualizowany wraz z licencjami!');
+            ->with('success', 'Beneficjent zaktualizowany wraz z licencjami!')
+            ->with('user_email', $beneficiary->user?->email)
+            ->with('user_password', $plainPassword);
     }
 
     // Usuwanie beneficjenta
