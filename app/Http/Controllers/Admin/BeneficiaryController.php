@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Beneficiary;
-use App\Models\User;
 use App\Models\Instructor;
+use App\Models\User;
 use Illuminate\Support\Str;
 use App\Mail\BeneficiaryCredentials;
 use Illuminate\Support\Facades\Mail;
@@ -16,7 +16,7 @@ class BeneficiaryController extends Controller
     public function index()
     {
         $instructors = Instructor::all();
-        $beneficiaries = Beneficiary::with('user')->get(); // załaduj użytkownika
+        $beneficiaries = Beneficiary::with('user')->get();
         return view('admin.beneficiaries.index', compact('beneficiaries','instructors'));
     }
 
@@ -36,31 +36,13 @@ class BeneficiaryController extends Controller
             'active' => 'boolean',
         ]);
 
-        // generowanie slug: pierwsze 3 litery imienia i nazwiska + 2 losowe cyfry
+        // Generowanie slug: pierwsze 3 litery imienia i nazwiska + 2 losowe cyfry
         $slug = strtolower(substr($data['first_name'], 0, 3) . substr($data['last_name'], 0, 3) . rand(10, 99));
         $data['slug'] = $slug;
 
-        $beneficiary = Beneficiary::create($data);
+        Beneficiary::create($data);
 
-        // Tworzenie użytkownika + losowe hasło
-        $plainPassword = Str::random(12);
-        $user = User::create([
-            'name' => $beneficiary->first_name . ' ' . $beneficiary->last_name,
-            'email' => $beneficiary->email,
-            'password' => bcrypt($plainPassword),
-        ]);
-
-        $beneficiary->user()->save($user);
-
-        // Wysyłka maila powitalnego
-        Mail::to($user->email)
-            ->cc('dev@ziemowit.me')
-            ->send(new BeneficiaryCredentials($user, $plainPassword));
-
-        return redirect()->route('admin.beneficiaries.index')
-            ->with('success', 'Beneficjent dodany!')
-            ->with('user_email', $user->email)
-            ->with('user_password', $plainPassword);
+        return redirect()->route('admin.beneficiaries.index')->with('success', 'Beneficjent dodany!');
     }
 
     public function edit(Beneficiary $beneficiary)
@@ -86,26 +68,43 @@ class BeneficiaryController extends Controller
 
     public function destroy(Beneficiary $beneficiary)
     {
-        if ($beneficiary->user) $beneficiary->user->delete();
+        // Usuń powiązane konto użytkownika, jeśli istnieje
+        if ($beneficiary->user) {
+            $beneficiary->user->delete();
+        }
+
         $beneficiary->delete();
+
         return redirect()->route('admin.beneficiaries.index')->with('success', 'Beneficjent usunięty!');
     }
 
-    // Wysyłka maila powitalnego ręcznie
+    /**
+     * Wyślij mail powitalny do beneficjenta.
+     * Jeśli nie ma konta, tworzy konto i generuje hasło.
+     */
     public function sendWelcomeMail(Beneficiary $beneficiary)
     {
+        // Jeśli Beneficjent nie ma konta, tworzymy użytkownika
         if (!$beneficiary->user) {
-            return redirect()->back()->with('error', 'Beneficjent nie ma konta użytkownika.');
+            $plainPassword = Str::random(16);
+
+            $user = $beneficiary->user()->create([
+                'name' => $beneficiary->first_name . ' ' . $beneficiary->last_name,
+                'email' => $beneficiary->email,
+                'password' => bcrypt($plainPassword),
+            ]);
+
+            // Wysyłka maila powitalnego
+            Mail::to($user->email)
+                ->send(new BeneficiaryCredentials($user, $plainPassword));
+
+            return redirect()->route('admin.beneficiaries.index')
+                ->with('success', 'Mail powitalny wysłany! Konto utworzone.')
+                ->with('user_email', $user->email)
+                ->with('user_password', $plainPassword);
         }
 
-        try {
-            Mail::to($beneficiary->user->email)
-                ->cc('dev@ziemowit.me')
-                ->send(new BeneficiaryCredentials($beneficiary->user, '---')); // jeśli nie zmieniasz hasła, możesz przekazać placeholder
-
-            return redirect()->back()->with('success', 'Mail powitalny wysłany.');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Błąd wysyłki: ' . $e->getMessage());
-        }
+        return redirect()->route('admin.beneficiaries.index')
+            ->with('info', 'Beneficjent już ma konto. Możesz wysłać mail ponownie z edycji użytkownika.');
     }
 }
