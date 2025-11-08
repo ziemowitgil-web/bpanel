@@ -11,6 +11,13 @@ use Illuminate\Support\Str;
 
 class BeneficiaryController extends Controller
 {
+    public function __construct()
+    {
+        // Możesz tu dodać middleware dla admina
+        $this->middleware('auth');
+        $this->middleware('admin'); // przykładowo, jeśli masz flagę is_admin
+    }
+
     // Lista beneficjentów
     public function index()
     {
@@ -29,11 +36,11 @@ class BeneficiaryController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'first_name'    => 'required|string',
-            'last_name'     => 'required|string',
+            'first_name'    => 'required|string|max:255',
+            'last_name'     => 'required|string|max:255',
             'email'         => 'required|email|unique:beneficiaries,email',
-            'phone'         => 'nullable|string',
-            'class_link'    => 'nullable|url',
+            'phone'         => 'nullable|string|max:20',
+            'class_link'    => 'nullable|url|max:255',
             'instructor_id' => 'nullable|exists:instructors,id',
             'active'        => 'nullable|boolean',
         ]);
@@ -52,29 +59,17 @@ class BeneficiaryController extends Controller
         ]);
 
         // Tworzenie użytkownika
-        $loginBase = strtolower(substr($request->first_name, 0, 3) . substr($request->last_name, 0, 3));
-        $login = $loginBase . $beneficiary->id;
-        $counter = 1;
-        $originalLogin = $login;
-
-        while (User::where('name', $login)->exists()) {
-            $login = $originalLogin . $counter;
-            $counter++;
-        }
-
         $plainPassword = Str::random(8);
-
         $user = User::create([
-            'name'     => $login,
+            'name'     => $beneficiary->first_name . ' ' . $beneficiary->last_name,
             'email'    => $beneficiary->email,
             'password' => bcrypt($plainPassword),
         ]);
-
         $beneficiary->user()->save($user);
 
         return redirect()->route('admin.beneficiaries.index')
             ->with('success', 'Beneficjent utworzony!')
-            ->with('user_login', $login)
+            ->with('user_email', $user->email)
             ->with('user_password', $plainPassword);
     }
 
@@ -86,19 +81,19 @@ class BeneficiaryController extends Controller
         return view('admin.beneficiaries.edit', compact('beneficiary', 'instructors'));
     }
 
-    // Aktualizacja beneficjenta
+    // Aktualizacja beneficjenta wraz z licencjami
     public function update(Request $request, Beneficiary $beneficiary)
     {
         $request->validate([
-            'first_name'     => 'required|string',
-            'last_name'      => 'required|string',
+            'first_name'     => 'required|string|max:255',
+            'last_name'      => 'required|string|max:255',
             'email'          => 'required|email|unique:beneficiaries,email,' . $beneficiary->id,
-            'phone'          => 'nullable|string',
-            'class_link'     => 'nullable|url',
+            'phone'          => 'nullable|string|max:20',
+            'class_link'     => 'nullable|url|max:255',
             'instructor_id'  => 'nullable|exists:instructors,id',
             'active'         => 'nullable|boolean',
-            'licenses.*.type'=> 'required|string',
-            'licenses.*.name'=> 'required|string',
+            'licenses.*.type'=> 'required|string|max:255',
+            'licenses.*.name'=> 'required|string|max:255',
         ]);
 
         if ($beneficiary->first_name !== $request->first_name || $beneficiary->last_name !== $request->last_name) {
@@ -115,6 +110,7 @@ class BeneficiaryController extends Controller
             'instructor_id' => $request->instructor_id,
         ]);
 
+        // Aktualizacja licencji
         if ($request->has('licenses')) {
             foreach ($request->licenses as $id => $data) {
                 if (is_numeric($id)) {
@@ -127,14 +123,21 @@ class BeneficiaryController extends Controller
         }
 
         return redirect()->route('admin.beneficiaries.index')
-            ->with('success', 'Beneficjent zaktualizowany !');
+            ->with('success', 'Beneficjent zaktualizowany wraz z licencjami!');
     }
 
     // Usuwanie beneficjenta
     public function destroy(Beneficiary $beneficiary)
     {
+        // Usuń licencje
         $beneficiary->licenses()->delete();
-        if ($beneficiary->user) $beneficiary->user->delete();
+
+        // Usuń użytkownika powiązanego
+        if ($beneficiary->user) {
+            $beneficiary->user->delete();
+        }
+
+        // Usuń beneficjenta
         $beneficiary->delete();
 
         return redirect()->route('admin.beneficiaries.index')
@@ -144,13 +147,19 @@ class BeneficiaryController extends Controller
     // Generowanie unikalnego sluga
     protected function generateSlug($firstName, $lastName)
     {
-        $slug = Str::lower(Str::ascii($firstName[0] . $lastName[0]));
-        $originalSlug = $slug;
-        $counter = 1;
+        // Domyślny slug: pierwsza litera imienia + pierwsza litera nazwiska
+        $slug = Str::lower(Str::ascii(substr($firstName, 0, 1) . substr($lastName, 0, 1)));
 
-        while (Beneficiary::where('slug', $slug)->exists()) {
-            $slug = $originalSlug . $counter;
-            $counter++;
+        if (Beneficiary::where('slug', $slug)->exists()) {
+            // Konflikt: używamy 3 liter imienia + 3 liter nazwiska
+            $slug = Str::lower(Str::ascii(substr($firstName, 0, 3) . substr($lastName, 0, 3)));
+            $originalSlug = $slug;
+            $counter = 1;
+
+            while (Beneficiary::where('slug', $slug)->exists()) {
+                $slug = $originalSlug . $counter;
+                $counter++;
+            }
         }
 
         return $slug;

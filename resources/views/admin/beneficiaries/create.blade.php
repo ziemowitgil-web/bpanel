@@ -1,55 +1,94 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="container py-4">
-        <h1 class="mb-4">Dodaj beneficjenta</h1>
+    <div class="container mt-4">
+        <h1>Dodaj nowego beneficjenta</h1>
 
-        @if(session('success'))
-            <div class="alert alert-success">{!! session('success') !!}</div>
+        @if ($errors->any())
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
         @endif
 
         <form action="{{ route('admin.beneficiaries.store') }}" method="POST">
             @csrf
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label for="first_name" class="form-label">Imię</label>
-                    <input type="text" name="first_name" id="first_name" class="form-control" required>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">Imię</label>
+                    <input type="text" name="first_name" class="form-control" value="{{ old('first_name') }}">
                 </div>
+                <div class="col-md-4">
+                    <label class="form-label">Nazwisko</label>
+                    <input type="text" name="last_name" class="form-control" value="{{ old('last_name') }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="email" class="form-control" value="{{ old('email') }}">
+                </div>
+            </div>
 
-                <div class="col-md-6">
-                    <label for="last_name" class="form-label">Nazwisko</label>
-                    <input type="text" name="last_name" id="last_name" class="form-control" required>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">Telefon</label>
+                    <input type="text" name="phone" class="form-control" value="{{ old('phone') }}">
                 </div>
+                <div class="col-md-4">
+                    <label class="form-label">Link do zajęć</label>
+                    <input type="url" name="class_link" class="form-control" value="{{ old('class_link') }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Instruktor</label>
+                    <select name="instructor_id" class="form-select">
+                        <option value="">-- brak --</option>
+                        @foreach($instructors as $inst)
+                            <option value="{{ $inst->id }}" @if(old('instructor_id') == $inst->id) selected @endif>
+                                {{ $inst->first_name }} {{ $inst->last_name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
 
-                <div class="col-md-6">
-                    <label for="email" class="form-label">Email</label>
-                    <input type="email" name="email" id="email" class="form-control" required>
-                </div>
+            <div class="form-check mb-3">
+                <input type="checkbox" name="active" class="form-check-input" @if(old('active')) checked @endif>
+                <label class="form-check-label">Aktywny</label>
+            </div>
 
-                <div class="col-md-6">
-                    <label for="phone" class="form-label">Telefon</label>
-                    <input type="text" name="phone" id="phone" class="form-control">
-                </div>
+            <hr>
+            <h4>Licencje</h4>
+            <div id="licenses-container"></div>
+            <button type="button" id="add-license" class="btn btn-sm btn-success mb-3">Dodaj licencję</button>
 
-                <div class="col-md-12">
-                    <label for="class_link" class="form-label">Link do zajęć</label>
-                    <input type="url" name="class_link" id="class_link" class="form-control">
-                </div>
-
-                <
-                </div>
-
-                <div class="col-md-6 d-flex align-items-center">
-                    <div class="form-check mt-4">
-                        <input type="checkbox" name="active" id="active" class="form-check-input" value="1">
-                        <label for="active" class="form-check-label">Aktywny</label>
-                    </div>
-                </div>
-
-                <div class="col-12 text-end">
-                    <button type="submit" class="btn btn-primary">Dodaj</button>
-                </div>
+            <div>
+                <button type="submit" class="btn btn-primary">Zapisz</button>
+                <a href="{{ route('admin.beneficiaries.index') }}" class="btn btn-secondary">Powrót</a>
             </div>
         </form>
     </div>
+
+    <script>
+        let licenseIndex = 0;
+        document.getElementById('add-license').addEventListener('click', function() {
+            const container = document.getElementById('licenses-container');
+            const div = document.createElement('div');
+            div.classList.add('row', 'mb-2');
+            div.innerHTML = `
+        <div class="col-md-4"><input type="text" name="licenses[${licenseIndex}][type]" class="form-control" placeholder="Typ licencji"></div>
+        <div class="col-md-6"><input type="text" name="licenses[${licenseIndex}][name]" class="form-control" placeholder="Nazwa licencji"></div>
+        <div class="col-md-2"><button type="button" class="btn btn-danger btn-sm remove-license">Usuń</button></div>
+    `;
+            container.appendChild(div);
+            licenseIndex++;
+        });
+
+        document.getElementById('licenses-container').addEventListener('click', function(e) {
+            if(e.target.classList.contains('remove-license')) {
+                e.target.closest('.row').remove();
+            }
+        });
+    </script>
 @endsection
