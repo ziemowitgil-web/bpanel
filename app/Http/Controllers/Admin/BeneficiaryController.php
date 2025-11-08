@@ -17,7 +17,7 @@ class BeneficiaryController extends Controller
     {
         $instructors = Instructor::all();
         $beneficiaries = Beneficiary::with('user')->get();
-        return view('admin.beneficiaries.index', compact('beneficiaries','instructors'));
+        return view('admin.beneficiaries.index', compact('beneficiaries', 'instructors'));
     }
 
     public function create()
@@ -36,8 +36,12 @@ class BeneficiaryController extends Controller
             'active' => 'boolean',
         ]);
 
-        // Generowanie slug: pierwsze 3 litery imienia i nazwiska + 2 losowe cyfry
-        $slug = strtolower(substr($data['first_name'], 0, 3) . substr($data['last_name'], 0, 3) . rand(10, 99));
+        // Bezpieczna konwersja do UTF-8
+        $data['first_name'] = mb_convert_encoding($data['first_name'], 'UTF-8', 'UTF-8');
+        $data['last_name'] = mb_convert_encoding($data['last_name'], 'UTF-8', 'UTF-8');
+
+        // Generowanie slug: mapowanie polskich znaków + pierwsze 3 litery imienia i nazwiska + 2 losowe cyfry
+        $slug = strtolower($this->slugify($data['first_name'] . $data['last_name'] . rand(10, 99)));
         $data['slug'] = $slug;
 
         Beneficiary::create($data);
@@ -61,6 +65,9 @@ class BeneficiaryController extends Controller
             'active' => 'boolean',
         ]);
 
+        $data['first_name'] = mb_convert_encoding($data['first_name'], 'UTF-8', 'UTF-8');
+        $data['last_name'] = mb_convert_encoding($data['last_name'], 'UTF-8', 'UTF-8');
+
         $beneficiary->update($data);
 
         return redirect()->route('admin.beneficiaries.index')->with('success', 'Beneficjent zaktualizowany!');
@@ -68,7 +75,6 @@ class BeneficiaryController extends Controller
 
     public function destroy(Beneficiary $beneficiary)
     {
-        // Usuń powiązane konto użytkownika, jeśli istnieje
         if ($beneficiary->user) {
             $beneficiary->user->delete();
         }
@@ -78,23 +84,17 @@ class BeneficiaryController extends Controller
         return redirect()->route('admin.beneficiaries.index')->with('success', 'Beneficjent usunięty!');
     }
 
-    /**
-     * Wyślij mail powitalny do beneficjenta.
-     * Jeśli nie ma konta, tworzy konto i generuje hasło.
-     */
     public function sendWelcomeMail(Beneficiary $beneficiary)
     {
-        // Jeśli Beneficjent nie ma konta, tworzymy użytkownika
         if (!$beneficiary->user) {
-            $plainPassword = Str::random(16);
+            $plainPassword = substr(str_replace(['-', '_'], '', Str::uuid()->toString()), 0, 16);
 
             $user = $beneficiary->user()->create([
-                'name' => $beneficiary->first_name . ' ' . $beneficiary->last_name,
-                'email' => $beneficiary->email,
+                'name' => mb_convert_encoding($beneficiary->first_name . ' ' . $beneficiary->last_name, 'UTF-8', 'UTF-8'),
+                'email' => mb_convert_encoding($beneficiary->email, 'UTF-8', 'UTF-8'),
                 'password' => bcrypt($plainPassword),
             ]);
 
-            // Wysyłka maila powitalnego
             Mail::to($user->email)
                 ->send(new BeneficiaryCredentials($user, $plainPassword));
 
@@ -108,9 +108,6 @@ class BeneficiaryController extends Controller
             ->with('info', 'Beneficjent już ma konto. Możesz wysłać mail ponownie z edycji użytkownika.');
     }
 
-    /**
-     * Usuń konto użytkownika powiązanego z beneficjentem, bez usuwania beneficjenta.
-     */
     public function deleteUser(Beneficiary $beneficiary)
     {
         if ($beneficiary->user) {
@@ -123,5 +120,18 @@ class BeneficiaryController extends Controller
 
         return redirect()->route('admin.beneficiaries.index')
             ->with('error', 'Ten beneficjent nie ma konta użytkownika.');
+    }
+
+    /**
+     * Zamienia polskie znaki na "normalne" w stringu, bezpieczne dla URL i slugów.
+     */
+    private function slugify(string $text): string
+    {
+        $polish = ['ą','ć','ę','ł','ń','ó','ś','ź','ż','Ą','Ć','Ę','Ł','Ń','Ó','Ś','Ź','Ż'];
+        $latin  = ['a','c','e','l','n','o','s','z','z','A','C','E','L','N','O','S','Z','Z'];
+
+        $text = str_replace($polish, $latin, $text);
+        $text = preg_replace('/[^A-Za-z0-9\-]/', '', $text); // tylko litery, cyfry i -
+        return $text;
     }
 }
