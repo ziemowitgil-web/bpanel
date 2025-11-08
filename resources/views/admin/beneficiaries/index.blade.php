@@ -9,7 +9,6 @@
             </a>
         </div>
 
-        {{-- Alert sukcesu i dane nowego użytkownika --}}
         @if(session('success'))
             <div class="alert alert-success alert-dismissible fade show" role="alert">
                 {{ session('success') }}
@@ -73,7 +72,7 @@
                             <form action="{{ route('admin.beneficiaries.destroy', $b) }}" method="POST" class="d-inline-block">
                                 @csrf
                                 @method('DELETE')
-                                <button class="btn btn-sm btn-danger" onclick="return confirm('Na pewno chcesz usunąć?')">
+                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Na pewno chcesz usunąć?')">
                                     <i class="bi bi-trash"></i> Usuń
                                 </button>
                             </form>

@@ -101,7 +101,6 @@ class BeneficiaryController extends Controller
             'licenses.*.name'=> 'required|string',
         ]);
 
-        // Generowanie nowego sluga tylko jeśli zmieniło się imię lub nazwisko
         if ($beneficiary->first_name !== $request->first_name || $beneficiary->last_name !== $request->last_name) {
             $beneficiary->slug = $this->generateSlug($request->first_name, $request->last_name);
         }
@@ -116,7 +115,6 @@ class BeneficiaryController extends Controller
             'instructor_id' => $request->instructor_id,
         ]);
 
-        // Obsługa licencji
         if ($request->has('licenses')) {
             foreach ($request->licenses as $id => $data) {
                 if (is_numeric($id)) {
@@ -129,19 +127,14 @@ class BeneficiaryController extends Controller
         }
 
         return redirect()->route('admin.beneficiaries.index')
-            ->with('success', 'Beneficjent zaktualizowany wraz z licencjami!');
+            ->with('success', 'Beneficjent zaktualizowany !');
     }
 
     // Usuwanie beneficjenta
     public function destroy(Beneficiary $beneficiary)
     {
-        // Usuń użytkownika powiązanego
-        if ($beneficiary->user) $beneficiary->user->delete();
-
-        // Usuń licencje
         $beneficiary->licenses()->delete();
-
-        // Usuń beneficjenta
+        if ($beneficiary->user) $beneficiary->user->delete();
         $beneficiary->delete();
 
         return redirect()->route('admin.beneficiaries.index')
