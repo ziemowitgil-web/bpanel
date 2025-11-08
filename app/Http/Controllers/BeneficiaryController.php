@@ -12,7 +12,7 @@ class BeneficiaryController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth');
+        $this->middleware('auth'); // tylko logowanie wymagane
     }
 
     // Lista beneficjentów
@@ -32,24 +32,24 @@ class BeneficiaryController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'first_name'    => 'required|string|max:255',
-            'last_name'     => 'required|string|max:255',
-            'email'         => 'required|email|unique:beneficiaries,email',
-            'phone'         => 'nullable|string|max:20',
-            'class_link'    => 'nullable|url|max:255',
-            'active'        => 'sometimes|boolean',
+            'first_name' => 'required|string|max:255',
+            'last_name'  => 'required|string|max:255',
+            'email'      => 'required|email|unique:beneficiaries,email',
+            'phone'      => 'nullable|string|max:20',
+            'class_link' => 'nullable|url|max:255',
+            'active'     => 'sometimes|boolean',
         ]);
 
         $slug = $this->generateSlug($request->first_name, $request->last_name);
 
         $beneficiary = Beneficiary::create([
-            'first_name'    => $request->first_name,
-            'last_name'     => $request->last_name,
-            'email'         => $request->email,
-            'phone'         => $request->phone,
-            'class_link'    => $request->class_link,
-            'active'        => $request->has('active'),
-            'slug'          => $slug,
+            'first_name' => $request->first_name,
+            'last_name'  => $request->last_name,
+            'email'      => $request->email,
+            'phone'      => $request->phone,
+            'class_link' => $request->class_link,
+            'active'     => $request->has('active'),
+            'slug'       => $slug,
         ]);
 
         // Tworzenie użytkownika (login = email)
@@ -78,30 +78,31 @@ class BeneficiaryController extends Controller
     public function update(Request $request, Beneficiary $beneficiary)
     {
         $request->validate([
-            'first_name'     => 'required|string|max:255',
-            'last_name'      => 'required|string|max:255',
-            'email'          => 'required|email|unique:beneficiaries,email,' . $beneficiary->id,
-            'phone'          => 'nullable|string|max:20',
-            'class_link'     => 'nullable|url|max:255',
-            'active'         => 'sometimes|boolean',
-            'licenses.*.type'=> 'required|string|max:255',
-            'licenses.*.name'=> 'required|string|max:255',
+            'first_name'      => 'required|string|max:255',
+            'last_name'       => 'required|string|max:255',
+            'email'           => 'required|email|unique:beneficiaries,email,' . $beneficiary->id,
+            'phone'           => 'nullable|string|max:20',
+            'class_link'      => 'nullable|url|max:255',
+            'active'          => 'sometimes|boolean',
+            'licenses.*.type' => 'required|string|max:255',
+            'licenses.*.name' => 'required|string|max:255',
         ]);
 
+        // Generowanie nowego sluga tylko jeśli zmieniło się imię lub nazwisko
         if ($beneficiary->first_name !== $request->first_name || $beneficiary->last_name !== $request->last_name) {
             $beneficiary->slug = $this->generateSlug($request->first_name, $request->last_name);
         }
 
         $beneficiary->update([
-            'first_name'    => $request->first_name,
-            'last_name'     => $request->last_name,
-            'email'         => $request->email,
-            'phone'         => $request->phone,
-            'class_link'    => $request->class_link,
-            'active'        => $request->has('active'),
+            'first_name' => $request->first_name,
+            'last_name'  => $request->last_name,
+            'email'      => $request->email,
+            'phone'      => $request->phone,
+            'class_link' => $request->class_link,
+            'active'     => $request->has('active'),
         ]);
 
-        // Aktualizacja licencji
+        // Obsługa licencji
         if ($request->has('licenses')) {
             foreach ($request->licenses as $id => $data) {
                 if (is_numeric($id)) {
@@ -131,10 +132,11 @@ class BeneficiaryController extends Controller
     // Generowanie unikalnego sluga
     protected function generateSlug($firstName, $lastName)
     {
-        $slug = Str::lower(Str::ascii(substr($firstName, 0, 1) . substr($lastName, 0, 1)));
+        $slug = Str::lower(Str::ascii(substr($firstName, 0, 1) . $lastName));
 
+        // Jeśli istnieje konflikt, używamy pierwsze 3 litery imienia + nazwisko
         if (Beneficiary::where('slug', $slug)->exists()) {
-            $slug = Str::lower(Str::ascii(substr($firstName, 0, 3) . substr($lastName, 0, 3)));
+            $slug = Str::lower(Str::ascii(substr($firstName, 0, 3) . $lastName));
             $originalSlug = $slug;
             $counter = 1;
 
@@ -145,5 +147,3 @@ class BeneficiaryController extends Controller
         }
 
         return $slug;
-    }
-}
