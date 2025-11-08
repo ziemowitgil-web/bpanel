@@ -11,9 +11,25 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
     <style>
-        body { min-height: 100vh; padding-top: 70px; background-color: #f8f9fa; }
-        .navbar-brand { font-weight: 600; }
+        body {
+            min-height: 100vh;
+            padding-top: 70px;
+            background: linear-gradient(135deg, #f0f4ff 0%, #e6f0ff 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .navbar-brand { font-weight: 600; font-size: 1.5rem; }
         .dropdown-header-info { font-size: 0.875rem; padding: 0.5rem 1rem; border-top: 1px solid #e9ecef; }
+        .card-panel {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 30px;
+            border-radius: 15px;
+            background: #ffffffcc;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .card-panel i { font-size: 3rem; margin-bottom: 20px; color: #0d6efd; }
+        .btn-primary { border-radius: 50px; padding: 10px 25px; font-weight: 500; }
     </style>
 </head>
 <body>
@@ -31,44 +47,12 @@
             </button>
 
             <div class="collapse navbar-collapse" id="navbarContent">
-                <!-- Lewa strona menu -->
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('dashboard') }}">
-                            <i class="bi bi-house-door me-1"></i> Dashboard
-                        </a>
-                    </li>
-                    @if(Auth::check() && Auth::user()->is_admin)
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('admin.beneficiaries.index') }}">
-                                <i class="bi bi-person-gear me-1"></i> Panel Admina
-                            </a>
-                        </li>
-                    @endif
-                </ul>
-
-                <!-- Prawa strona menu -->
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                    @guest
-                        @if(Route::has('login'))
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ route('login') }}">
-                                    <i class="bi bi-box-arrow-in-right me-1"></i> Login
-                                </a>
-                            </li>
-                        @endif
-                        @if(Route::has('register'))
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ route('register') }}">
-                                    <i class="bi bi-person-plus me-1"></i> Register
-                                </a>
-                            </li>
-                        @endif
-                    @else
+                    @auth
                         @php
                             $user = Auth::user();
                             $beneficiary = $user->is_admin
-                                ? \App\Models\Beneficiary::where('email', 'system@feer.org.pl')->first()
+                                ? null
                                 : $user->beneficiary;
                         @endphp
 
@@ -76,24 +60,17 @@
                             <a id="navbarDropdown" class="nav-link dropdown-toggle" href="#" role="button"
                                data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="bi bi-person-circle me-1"></i>
-                                {{ $beneficiary->first_name ?? 'BRAK' }} {{ $beneficiary->last_name ?? '' }}
+                                {{ $beneficiary->first_name ?? $user->name ?? 'Użytkownik' }}
                             </a>
 
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li>
-                                    <a class="dropdown-item" href="{{ route('logout') }}"
-                                       onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                                        <i class="bi bi-box-arrow-right me-1"></i> Wyloguj
-                                    </a>
-                                </li>
-
-                                <li>
                                     <div class="dropdown-header-info">
                                         <div><i class="bi bi-person-badge me-1"></i> Konto: {{ $user->name }}</div>
                                         <div><i class="bi bi-envelope me-1"></i> Email: {{ $user->email }}</div>
-                                        <div><i class="bi bi-people me-1"></i>
-                                            Beneficjent: {{ $beneficiary->first_name ?? '-' }} {{ $beneficiary->last_name ?? '-' }}
-                                        </div>
+                                        @if($beneficiary)
+                                            <div><i class="bi bi-people me-1"></i> Beneficjent: {{ $beneficiary->first_name }} {{ $beneficiary->last_name }}</div>
+                                        @endif
                                     </div>
                                 </li>
 
@@ -105,13 +82,21 @@
                                         </a>
                                     </li>
                                 @endif
+
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('logout') }}"
+                                       onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                        <i class="bi bi-box-arrow-right me-1"></i> Wyloguj
+                                    </a>
+                                </li>
                             </ul>
 
                             <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
                                 @csrf
                             </form>
                         </li>
-                    @endguest
+                    @endauth
                 </ul>
             </div>
         </div>
