@@ -55,15 +55,7 @@
                 </div>
 
                 <div class="col-md-4">
-                    <label for="instructor_id" class="form-label">Instruktor</label>
-                    <select name="instructor_id" id="instructor_id" class="form-select">
-                        <option value="">-- brak --</option>
-                        @foreach($instructors as $inst)
-                            <option value="{{ $inst->id }}" @if(old('instructor_id') == $inst->id) selected @endif>
-                                {{ $inst->first_name }} {{ $inst->last_name }}
-                            </option>
-                        @endforeach
-                    </select>
+                    
                 </div>
             </div>
 
