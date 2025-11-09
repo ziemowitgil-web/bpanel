@@ -1,65 +1,54 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">{{ __('Reset Password') }}</div>
+    <div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+        <div class="card shadow-lg border-0 rounded-4" style="max-width: 400px; width: 100%;">
+            <div class="card-header text-center bg-primary text-white rounded-top-4 py-3">
+                <h4 class="mb-0"><i class="bi bi-envelope-fill me-2"></i>Reset Hasła</h4>
+            </div>
 
-                <div class="card-body">
-                    <form method="POST" action="{{ route('password.update') }}">
-                        @csrf
+            <div class="card-body p-4">
+                <p class="text-center text-muted mb-4 fs-6">
+                    Wprowadź adres e-mail przypisany do Twojego konta.
+                    Wyślemy Ci link do zmiany hasła.
+                </p>
 
-                        <input type="hidden" name="token" value="{{ $token }}">
+                @if (session('status'))
+                    <div class="alert alert-success text-center">
+                        {{ session('status') }}
+                    </div>
+                @endif
 
-                        <div class="row mb-3">
-                            <label for="email" class="col-md-4 col-form-label text-md-end">{{ __('Email Address') }}</label>
+                <form method="POST" action="{{ route('password.email') }}">
+                    @csrf
 
-                            <div class="col-md-6">
-                                <input id="email" type="email" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ $email ?? old('email') }}" required autocomplete="email" autofocus>
-
-                                @error('email')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                @enderror
-                            </div>
+                    <!-- Email -->
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Adres e-mail</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                            <input id="email" type="email" name="email"
+                                   class="form-control @error('email') is-invalid @enderror"
+                                   value="{{ old('email') }}" required autofocus>
                         </div>
+                        @error('email')
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
+                    </div>
 
-                        <div class="row mb-3">
-                            <label for="password" class="col-md-4 col-form-label text-md-end">{{ __('Password') }}</label>
+                    <!-- Przycisk -->
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg fw-semibold">
+                            <i class="bi bi-arrow-right-circle me-2"></i>Wyślij link do resetu hasła
+                        </button>
+                    </div>
+                </form>
+            </div>
 
-                            <div class="col-md-6">
-                                <input id="password" type="password" class="form-control @error('password') is-invalid @enderror" name="password" required autocomplete="new-password">
-
-                                @error('password')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <label for="password-confirm" class="col-md-4 col-form-label text-md-end">{{ __('Confirm Password') }}</label>
-
-                            <div class="col-md-6">
-                                <input id="password-confirm" type="password" class="form-control" name="password_confirmation" required autocomplete="new-password">
-                            </div>
-                        </div>
-
-                        <div class="row mb-0">
-                            <div class="col-md-6 offset-md-4">
-                                <button type="submit" class="btn btn-primary">
-                                    {{ __('Reset Password') }}
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
+            <div class="card-footer text-center text-muted small bg-light rounded-bottom-4">
+                © {{ date('Y') }} FEER – Fundacja Edukacji Empatii i Rozwoju |
+                <a href="https://feer.org.pl/rodo" class="text-decoration-none">RODO</a>
             </div>
         </div>
     </div>
-</div>
 @endsection
