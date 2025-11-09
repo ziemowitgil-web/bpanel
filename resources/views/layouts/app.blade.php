@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ config('app.name', 'Laravel') }}</title>
+    <title>{{ config('app.name', 'System') }}</title>
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -12,77 +12,80 @@
 
     <style>
         body {
-            min-height: 100vh;
-            padding-top: 70px;
-            background: linear-gradient(135deg, #f0f4ff 0%, #e6f0ff 100%);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            padding-top: 65px;
         }
-        .navbar-brand { font-weight: 600; font-size: 1.5rem; }
-        .dropdown-header-info { font-size: 0.875rem; padding: 0.5rem 1rem; border-top: 1px solid #e9ecef; }
-        .card-panel {
-            max-width: 600px;
-            margin: 50px auto;
-            padding: 30px;
-            border-radius: 15px;
-            background: #ffffffcc;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-            text-align: center;
+
+        .navbar {
+            background-color: #fff;
+            border-bottom: 1px solid #dee2e6;
         }
-        .card-panel i { font-size: 3rem; margin-bottom: 20px; color: #0d6efd; }
-        .btn-primary { border-radius: 50px; padding: 10px 25px; font-weight: 500; }
+
+        .navbar-brand {
+            font-weight: 600;
+        }
+
+        .card {
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            border-radius: 4px;
+        }
+
+        .table th, .table td {
+            vertical-align: middle;
+        }
+
+        .alert {
+            border-radius: 4px;
+        }
+
+        @media (max-width: 768px) {
+            body { padding-top: 60px; }
+            .navbar-brand { font-size: 1.2rem; }
+        }
     </style>
 </head>
 <body>
 <div id="app">
 
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
+    <nav class="navbar navbar-expand-lg fixed-top shadow-sm">
         <div class="container">
-            <a class="navbar-brand" href="{{ url('/') }}">
-                {{ config('app.name', 'Laravel') }}
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
-                    aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+            <a class="navbar-brand" href="{{ url('/') }}">{{ config('app.name', 'System') }}</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
             <div class="collapse navbar-collapse" id="navbarContent">
-                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                <ul class="navbar-nav ms-auto">
                     @auth
                         @php
                             $user = Auth::user();
-                            $beneficiary = $user->is_admin
-                                ? null
-                                : $user->beneficiary;
+                            $beneficiary = $user->is_admin ? null : $user->beneficiary;
                         @endphp
-
                         <li class="nav-item dropdown text-end">
-                            <a id="navbarDropdown" class="nav-link dropdown-toggle" href="#" role="button"
-                               data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bi bi-person-circle me-1"></i>
-                                {{ $beneficiary->first_name ?? $user->name ?? 'Użytkownik' }}
+                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                <i class="bi bi-person-circle me-1"></i> {{ $beneficiary->first_name ?? $user->name }}
                             </a>
-
                             <ul class="dropdown-menu dropdown-menu-end">
-                                <li>
-                                    <div class="dropdown-header-info">
-                                        <div><i class="bi bi-person-badge me-1"></i> Konto: {{ $user->name }}</div>
-                                        <div><i class="bi bi-envelope me-1"></i> Email: {{ $user->email }}</div>
-                                        @if($beneficiary)
-                                            <div><i class="bi bi-people me-1"></i> Beneficjent: {{ $beneficiary->first_name }} {{ $beneficiary->last_name }}</div>
-                                        @endif
-                                    </div>
+                                <li class="px-3 py-2 small text-muted">
+                                    Konto: {{ $user->name }}<br>
+                                    Email: {{ $user->email }}<br>
+                                    @if($beneficiary)
+                                        Beneficjent: {{ $beneficiary->first_name }} {{ $beneficiary->last_name }}
+                                    @endif
                                 </li>
-
                                 @if($user->is_admin)
                                     <li><hr class="dropdown-divider"></li>
-                                    <li>
-                                        <a class="dropdown-item" href="{{ route('admin.beneficiaries.index') }}">
+                                    <li><a class="dropdown-item" href="{{ route('admin.beneficiaries.index') }}">
                                             <i class="bi bi-gear me-1"></i> Panel Admina
-                                        </a>
-                                    </li>
+                                        </a></li>
                                 @endif
-
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <a class="dropdown-item" href="{{ route('logout') }}"
@@ -91,10 +94,7 @@
                                     </a>
                                 </li>
                             </ul>
-
-                            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                                @csrf
-                            </form>
+                            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">@csrf</form>
                         </li>
                     @endauth
                 </ul>
@@ -102,13 +102,13 @@
         </div>
     </nav>
 
-    <!-- Główna zawartość -->
-    <main class="py-4 container">
+    <!-- Main -->
+    <main class="container py-4">
         @yield('content')
     </main>
+
 </div>
 
-<!-- Bootstrap JS Bundle -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
