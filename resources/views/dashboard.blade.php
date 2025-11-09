@@ -4,14 +4,14 @@
     <div class="container py-4">
         <!-- Powitanie -->
         <div class="text-center mb-4">
-            <h1 class="display-6">👋 Witaj, {{ $beneficiary->first_name }}!</h1>
-            <p class="text-muted">Twój panel do logowania na zajęcia i korzystania z narzędzi edukacyjnych</p>
+            <h1 class="h3 fw-semibold">Panel beneficjenta</h1>
+            <p class="text-muted">Witaj, {{ $beneficiary->first_name }}! — Twój panel dostępu do zajęć i zasobów systemu</p>
         </div>
 
         <!-- Tabs -->
         <ul class="nav nav-tabs mb-3" id="dashboardTabs" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active text-white bg-danger" id="classes-tab" data-bs-toggle="tab" data-bs-target="#classes" type="button" role="tab" aria-controls="classes" aria-selected="true">
+                <button class="nav-link active" id="classes-tab" data-bs-toggle="tab" data-bs-target="#classes" type="button" role="tab" aria-controls="classes" aria-selected="true">
                     <i class="bi bi-play-circle-fill"></i> Zajęcia
                 </button>
             </li>
@@ -36,21 +36,26 @@
                 </button>
             </li>
             <li class="nav-item" role="presentation">
+                <button class="nav-link" id="vps-tab" data-bs-toggle="tab" data-bs-target="#vps" type="button" role="tab" aria-controls="vps" aria-selected="false">
+                    <i class="bi bi-hdd-network"></i> VPS / środowisko testowe
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
                 <button class="nav-link" id="institution-tab" data-bs-toggle="tab" data-bs-target="#institution" type="button" role="tab" aria-controls="institution" aria-selected="false">
                     <i class="bi bi-building"></i> Instytucja
                 </button>
             </li>
         </ul>
 
-        <!-- Tab content -->
+        <!-- Treść zakładek -->
         <div class="tab-content" id="dashboardTabsContent">
             <!-- Zajęcia -->
-            <div class="tab-pane fade show active" id="classes" role="tabpanel" aria-labelledby="classes-tab">
+            <div class="tab-pane fade show active" id="classes" role="tabpanel">
                 <div class="card border-danger shadow-sm mb-3">
                     <div class="card-body text-center">
                         @if($beneficiary->active && $beneficiary->class_link)
                             <p class="lead">Dołącz do zajęć online:</p>
-                            <a href="{{ $beneficiary->class_link }}" target="_blank" class="btn btn-danger btn-lg mb-2" role="button" aria-label="Dołącz do zajęć online">
+                            <a href="{{ $beneficiary->class_link }}" target="_blank" class="btn btn-danger btn-lg mb-2" role="button">
                                 <i class="bi bi-box-arrow-in-right"></i> Wejdź na zajęcia
                             </a>
                             <p><small>Alternatywny link: <a href="{{ url('/meet/'.$beneficiary->slug) }}" target="_blank">{{ url('/meet/'.$beneficiary->slug) }}</a></small></p>
@@ -63,8 +68,8 @@
                 </div>
             </div>
 
-            <!-- Microsoft365 / PE -->
-            <div class="tab-pane fade" id="tools" role="tabpanel" aria-labelledby="tools-tab">
+            <!-- Microsoft 365 / PE -->
+            <div class="tab-pane fade" id="tools" role="tabpanel">
                 <div class="row g-3">
                     <div class="col-md-6">
                         <div class="card border-info shadow-sm">
@@ -73,7 +78,7 @@
                             </div>
                             <div class="card-body text-center">
                                 <p><strong>Login:</strong> {{ strtolower($beneficiary->first_name) }}.{{ strtolower($beneficiary->last_name) }}@feer-kr.edu.pl</p>
-                                <a href="https://www.office.com" target="_blank" class="btn btn-primary" role="button" aria-label="Zaloguj się do Microsoft365">
+                                <a href="https://www.office.com" target="_blank" class="btn btn-primary">
                                     <i class="bi bi-box-arrow-in-right"></i> Zaloguj się
                                 </a>
                             </div>
@@ -86,7 +91,7 @@
                             </div>
                             <div class="card-body text-center">
                                 <p>Login i hasło takie samo jak Microsoft365</p>
-                                <a href="https://www.pe.feer.org.pl" target="_blank" class="btn btn-warning text-dark" role="button" aria-label="Zaloguj się do Platformy PE">
+                                <a href="https://www.pe.feer.org.pl" target="_blank" class="btn btn-warning text-dark">
                                     <i class="bi bi-box-arrow-in-right"></i> Zaloguj się
                                 </a>
                             </div>
@@ -96,7 +101,7 @@
             </div>
 
             <!-- Dane techniczne -->
-            <div class="tab-pane fade" id="technical" role="tabpanel" aria-labelledby="technical-tab">
+            <div class="tab-pane fade" id="technical" role="tabpanel">
                 <div class="card border-secondary shadow-sm">
                     <div class="card-body">
                         <ul class="list-unstyled mb-0">
@@ -119,7 +124,7 @@
             </div>
 
             <!-- Prowadzący -->
-            <div class="tab-pane fade" id="instructor" role="tabpanel" aria-labelledby="instructor-tab">
+            <div class="tab-pane fade" id="instructor" role="tabpanel">
                 <div class="card border-dark shadow-sm">
                     <div class="card-body">
                         @if($beneficiary->instructor)
@@ -134,7 +139,7 @@
             </div>
 
             <!-- Licencje -->
-            <div class="tab-pane fade" id="licenses" role="tabpanel" aria-labelledby="licenses-tab">
+            <div class="tab-pane fade" id="licenses" role="tabpanel">
                 <div class="card border-success shadow-sm">
                     <div class="card-body">
                         @if($beneficiary->licenses->isEmpty())
@@ -153,17 +158,37 @@
                 </div>
             </div>
 
+            <!-- VPS / środowisko testowe -->
+            <div class="tab-pane fade" id="vps" role="tabpanel">
+                <div class="card border-success shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <i class="bi bi-hdd-network"></i> Środowisko testowe VPS
+                    </div>
+                    <div class="card-body">
+                        <p>W tym miejscu będzie można zarządzać Twoim serwerem testowym <strong>VPS</strong>.</p>
+                        <p><strong>Adres serwera:</strong> <code>vps-{{ $user->id }}.feer-kr.edu.pl</code></p>
+                        <p><strong>Status:</strong> <span class="text-success fw-semibold">W przygotowaniu</span></p>
+                        <div class="mt-3">
+                            <button class="btn btn-outline-success" disabled>
+                                <i class="bi bi-plug"></i> Połącz z serwerem
+                            </button>
+                        </div>
+                        <hr>
+                        <p class="text-muted small mb-0">W przyszłości będzie tu możliwość: restartu instancji, monitorowania zasobów i dostępu SSH.</p>
+                    </div>
+                </div>
+            </div>
+
             <!-- Instytucja -->
-            <div class="tab-pane fade" id="institution" role="tabpanel" aria-labelledby="institution-tab">
+            <div class="tab-pane fade" id="institution" role="tabpanel">
                 <div class="card border-info shadow-sm">
                     <div class="card-body">
-                        <p><strong>FUNDACJA EDUKACJI EMPATII ROZWOJU "FEER"</strong></p>
+                        <p><strong>FUNDACJA EDUKACJI EMPATII ROZWOJU „FEER”</strong></p>
                         <p>ul. Władysława Barbackiego 28/18, 33-300 Nowy Sącz</p>
                         <p><strong>Koordynator szkoleń:</strong> Ewelina Frączek (<a href="mailto:ewelina.fraczek@feer.org.pl">ewelina.fraczek@feer.org.pl</a>)</p>
                     </div>
                 </div>
             </div>
-
         </div>
     </div>
 @endsection
