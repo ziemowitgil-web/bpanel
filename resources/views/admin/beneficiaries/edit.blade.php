@@ -108,12 +108,12 @@
                                     @csrf
                                     <button type="submit" class="btn btn-danger mb-2">Usuń konto użytkownika</button>
                                 </form>
-                                <form action="{{ route('admin.beneficiaries.sendWelcomeMail', $beneficiary) }}" method="POST">
+                                <form action="{{ route('admin.beneficiaries.welcome-mail', $beneficiary) }}" method="POST">
                                     @csrf
                                     <button type="submit" class="btn btn-secondary">Wyślij ponownie mail powitalny</button>
                                 </form>
                             @else
-                                <form action="{{ route('admin.beneficiaries.sendWelcomeMail', $beneficiary) }}" method="POST">
+                                <form action="{{ route('admin.beneficiaries.welcome-mail', $beneficiary) }}" method="POST">
                                     @csrf
                                     <button type="submit" class="btn btn-success">Utwórz konto i wyślij mail powitalny</button>
                                 </form>
