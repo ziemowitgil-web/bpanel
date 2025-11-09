@@ -166,7 +166,7 @@
                     </div>
                     <div class="card-body">
                         <p>W tym miejscu będzie można zarządzać Twoim serwerem testowym <strong>VPS</strong>.</p>
-                        <p><strong>Adres serwera:</strong> <code>vps-{{ $user->id }}.feer-kr.edu.pl</code></p>
+                        <p><strong>Adres serwera:</strong> <code>vps-{{ $beneficiary->slug }}.feer-kr.edu.pl</code></p>
                         <p><strong>Status:</strong> <span class="text-success fw-semibold">W przygotowaniu</span></p>
                         <div class="mt-3">
                             <button class="btn btn-outline-success" disabled>
