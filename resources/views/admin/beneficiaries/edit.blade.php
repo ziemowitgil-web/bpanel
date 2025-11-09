@@ -4,12 +4,18 @@
     <div class="container mt-4">
         <h1>Edytuj beneficjenta</h1>
 
-        @if(session('success'))
-            <div class="alert alert-success">{{ session('success') }}</div>
+        {{-- Alerty --}}
+        @if(session('success') || session('error') || session('info'))
+            @php
+                $alertType = session('success') ? 'success' : (session('info') ? 'info' : 'danger');
+                $message = session('success') ?? session('info') ?? session('error');
+            @endphp
+            <div class="alert alert-{{ $alertType }} alert-dismissible fade show">
+                {{ $message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
         @endif
-        @if(session('error'))
-            <div class="alert alert-danger">{{ session('error') }}</div>
-        @endif
+
         @if($errors->any())
             <div class="alert alert-danger">
                 <ul class="mb-0">
@@ -40,6 +46,7 @@
                     @method('PUT')
 
                     <div class="tab-content">
+
                         <!-- TAB 1: Dane podstawowe -->
                         <div class="tab-pane fade show active" id="dane" role="tabpanel">
                             <div class="row mb-3">
@@ -130,6 +137,30 @@
         </div>
     </div>
 
+    {{-- Modal do wyświetlania danych logowania --}}
+    @if(session('user_email') && session('user_password'))
+        <div class="modal fade" id="credentialsModal" tabindex="-1" aria-labelledby="credentialsModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Dane logowania beneficjenta</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p><strong>Email:</strong> {{ session('user_email') }}</p>
+                        <p><strong>Hasło:</strong> {{ session('user_password') }}</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zamknij</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+@endsection
+
+@section('scripts')
     <script>
         function addLicense() {
             const container = document.getElementById('licenses-container');
@@ -158,12 +189,22 @@
             const first = document.querySelector('input[name="first_name"]').value;
             const last = document.querySelector('input[name="last_name"]').value;
 
-            let slug = (first + last).toLowerCase();
-            slug = slug.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-            slug = slug.replace(/[^a-z0-9]/g, '');
-            slug += Math.floor(10 + Math.random() * 90);
+            // Funkcja mapująca polskie litery
+            const mapPolish = { 'ą':'a','ć':'c','ę':'e','ł':'l','ń':'n','ó':'o','ś':'s','ź':'z','ż':'z',
+                'Ą':'A','Ć':'C','Ę':'E','Ł':'L','Ń':'N','Ó':'O','Ś':'S','Ź':'Z','Ż':'Z' };
+            function replacePolish(str) {
+                return str.split('').map(c => mapPolish[c] || c).join('');
+            }
+
+            let slug = replacePolish(first.slice(0,3) + last.slice(0,3)).toLowerCase();
+            slug += Math.floor(10 + Math.random() * 90); // dwie losowe cyfry
 
             document.getElementById('slug').value = slug;
         }
+
+        @if(session('user_email') && session('user_password'))
+        var credentialsModal = new bootstrap.Modal(document.getElementById('credentialsModal'));
+        credentialsModal.show();
+        @endif
     </script>
 @endsection
