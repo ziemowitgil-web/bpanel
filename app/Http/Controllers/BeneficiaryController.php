@@ -8,6 +8,7 @@ use App\Models\Beneficiary;
 use App\Models\User;
 use Illuminate\Support\Str;
 use App\Mail\BeneficiaryCredentials;
+use App\Mail\ClassLinkMail;
 use Illuminate\Support\Facades\Mail;
 
 class BeneficiaryController extends Controller
@@ -67,6 +68,9 @@ class BeneficiaryController extends Controller
         Mail::to($user->email)
             ->cc('dev@ziemowit.me')
             ->send(new BeneficiaryCredentials($user, $plainPassword));
+
+        // Wysyłka maila z linkiem do zajęć (jeśli istnieje)
+        $this->sendClassLink($beneficiary);
 
         return redirect()->route('admin.beneficiaries.index')
             ->with('success', 'Beneficjent utworzony!')
@@ -151,6 +155,16 @@ class BeneficiaryController extends Controller
 
         return redirect()->route('admin.beneficiaries.index')
             ->with('success', 'Beneficjent usunięty!');
+    }
+
+    // Wysyłka maila z linkiem do zajęć
+    protected function sendClassLink(Beneficiary $beneficiary)
+    {
+        if ($beneficiary->class_link && $beneficiary->email) {
+            Mail::to($beneficiary->email)
+                ->cc('dev@ziemowit.me')
+                ->send(new ClassLinkMail($beneficiary));
+        }
     }
 
     // Generowanie unikalnego sluga: 1 litera imienia + 1 litera nazwiska, przy konflikcie 3+3 + licznik
