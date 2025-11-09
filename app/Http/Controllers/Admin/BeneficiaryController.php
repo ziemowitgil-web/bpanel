@@ -40,7 +40,12 @@ class BeneficiaryController extends Controller
         $data['last_name'] = mb_convert_encoding($data['last_name'], 'UTF-8', 'UTF-8');
 
         // Generowanie slug
-        $slug = strtolower($this->slugify($data['first_name'] . $data['last_name'] . rand(10, 99)));
+        $slug = strtolower(
+            $this->slugify(
+                substr($data['first_name'], 0, 1) . substr($data['last_name'], 0, 1)
+            )
+        );
+
         $data['slug'] = $slug;
 
         $beneficiary = Beneficiary::create($data);
