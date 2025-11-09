@@ -69,9 +69,8 @@
         <p><strong>Hasło tymczasowe:</strong> {{ $password }}</p>
     </div>
 
-    <a href="{{ route('volunteer.login') }}" class="button">Zaloguj się do panelu</a>
+    <a href="https://edukacja.cloud" class="button">Zaloguj się do panelu</a>
 
-    <p>Po pierwszym logowaniu zalecamy zmianę hasła na własne, aby zapewnić bezpieczeństwo konta.</p>
 
     <p>Z pozdrowieniami,<br>
         <strong>Zespół FEER</strong><br>
