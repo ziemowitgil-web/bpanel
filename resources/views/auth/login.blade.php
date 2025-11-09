@@ -5,7 +5,7 @@
         <div class="card shadow-lg border-0 rounded-4" style="max-width: 400px; width: 100%;">
             <div class="card-header text-center bg-primary text-white rounded-top-4 py-3">
                 <h4 class="mb-0">
-                    <i class="bi bi-person-circle me-2"></i>Panel Beneficjenta
+                    <i class="bi bi-person-circle me-2"></i>Panel eduk@acja
                 </h4>
             </div>
 
