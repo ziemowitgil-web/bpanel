@@ -104,7 +104,7 @@
                         <div class="tab-pane fade" id="konto" role="tabpanel">
                             @if($beneficiary->user)
                                 <p><strong>Email konta:</strong> {{ $beneficiary->user->email }}</p>
-                                <form action="{{ route('admin.beneficiaries.deleteUser', $beneficiary) }}" method="POST" onsubmit="return confirm('Na pewno chcesz usunąć konto użytkownika?');">
+                                <form action="{{ route('admin.beneficiaries.delete-user', $beneficiary) }}" method="POST" onsubmit="return confirm('Na pewno chcesz usunąć konto użytkownika?');">
                                     @csrf
                                     <button type="submit" class="btn btn-danger mb-2">Usuń konto użytkownika</button>
                                 </form>
