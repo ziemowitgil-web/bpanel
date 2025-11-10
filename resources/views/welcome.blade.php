@@ -38,7 +38,7 @@
         </div>
 
         <p class="text-muted text-center mt-5">
-            Zespół FEER – Fundacja Edukacji Empatii i Rozwoju
+              Fundacja Edukacji Empatii i Rozwoju "FEER"
         </p>
     </div>
 @endsection
